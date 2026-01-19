@@ -71,27 +71,6 @@ if [ "$PUSH" = "true" ]; then
             echo "==> Auto-bumping patch version: $CURRENT_TAG -> $NEW_VERSION"
         fi
 
-        # Update zed-ext version files with the new version
-        EXT_VERSION="${NEW_VERSION#v}"
-        EXTENSION_TOML="zed-ext/extension.toml"
-        if [ -f "$EXTENSION_TOML" ]; then
-            echo "==> Updating $EXTENSION_TOML version to $EXT_VERSION..."
-            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$EXTENSION_TOML"
-            git add "$EXTENSION_TOML"
-        fi
-        CARGO_TOML="zed-ext/Cargo.toml"
-        if [ -f "$CARGO_TOML" ]; then
-            echo "==> Updating $CARGO_TOML version to $EXT_VERSION..."
-            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$CARGO_TOML"
-            git add "$CARGO_TOML"
-        fi
-        # Amend commit if version files were updated
-        if [ -n "$(git diff --staged --name-only)" ]; then
-            echo "==> Amending commit with version file updates..."
-            git commit --amend --no-edit
-            git push --force-with-lease
-        fi
-
         echo "==> Creating tag $NEW_VERSION..."
         git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
 
@@ -103,18 +82,6 @@ if [ "$PUSH" = "true" ]; then
     fi
 else
     echo "==> Commit is local only (use PUSH=true to push and release)"
-fi
-
-# Sync to ClickUp
-echo ""
-echo "==> Syncing beans to ClickUp..."
-beanup sync || echo "Warning: beanup sync failed or not available"
-
-# Include sync state changes in the commit
-if [ -n "$(git status --porcelain .beans/.sync.json 2>/dev/null)" ]; then
-    echo "Including .beans/.sync.json in commit..."
-    git add .beans/.sync.json
-    git commit --amend --no-edit
 fi
 
 echo ""
