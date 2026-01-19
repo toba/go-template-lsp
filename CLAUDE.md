@@ -1,6 +1,6 @@
 # Go Template LSP
 
-Go Language Server Protocol implementation for Go templates
+Language Server Protocol implementation for Go templates
 
 ## Guidelines
 
@@ -9,3 +9,9 @@ Go Language Server Protocol implementation for Go templates
 - Run `golangci-lint run --fix` after modifying Go code
 - Run `go test ./...` after changes
 - **NEVER commit without explicit user request**
+
+## Building
+
+```bash
+go build ./cmd/go-template-lsp
+```
