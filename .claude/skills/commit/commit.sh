@@ -81,24 +81,26 @@ if [ "$PUSH" = "true" ]; then
         # Update Zed extension version (gozer is sibling repo)
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         GOZER_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)/../gozer"
-        GOZER_TOML="$GOZER_DIR/extension.toml"
-        if [ -f "$GOZER_TOML" ]; then
-            # Strip 'v' prefix for extension.toml (uses 0.6.4 not v0.6.4)
+        GOZER_EXT_TOML="$GOZER_DIR/extension.toml"
+        GOZER_CARGO_TOML="$GOZER_DIR/Cargo.toml"
+        if [ -f "$GOZER_EXT_TOML" ]; then
+            # Strip 'v' prefix for toml files (uses 0.6.4 not v0.6.4)
             EXT_VERSION=$(echo "$NEW_VERSION" | sed 's/^v//')
             echo ""
-            echo "==> Updating gozer extension to $EXT_VERSION..."
-            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$GOZER_TOML"
+            echo "==> Updating gozer to $EXT_VERSION..."
+            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$GOZER_EXT_TOML"
+            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$GOZER_CARGO_TOML"
 
             # Commit and push the extension update
             (
                 cd "$GOZER_DIR"
-                git add extension.toml
+                git add extension.toml Cargo.toml
                 git commit -m "bump version to $EXT_VERSION"
                 git push
-                echo "==> gozer extension updated and pushed"
+                echo "==> gozer updated and pushed"
             )
         else
-            echo "==> gozer extension.toml not found at $GOZER_TOML, skipping"
+            echo "==> gozer extension.toml not found at $GOZER_EXT_TOML, skipping"
         fi
     else
         echo "==> No existing tags, skipping version bump"
