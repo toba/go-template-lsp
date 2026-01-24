@@ -428,6 +428,69 @@ func TestTokenizeLine_Comment(t *testing.T) {
 	}
 }
 
+func TestTokenizeLine_MultilineComment(t *testing.T) {
+	// Multiline comments should be parsed correctly without errors
+	source := `{{/*
+Options is a slice of maps with keys:
+ - Value: form value (required)
+ - Label: display text in dropdown (required)
+ - ShortName: compact display in collapsed summary (optional)
+ - Icon: icon class name, e.g. "icon airplane" (optional)
+*/}}`
+	streams, errs := Tokenize([]byte(source))
+
+	if len(errs) != 0 {
+		t.Errorf("Expected 0 errors, got %d: %v", len(errs), errs)
+	}
+
+	if len(streams) != 1 {
+		t.Fatalf("Expected 1 stream, got %d", len(streams))
+	}
+
+	token := streams[0].Tokens[0]
+	if token.ID != Comment {
+		t.Errorf("Expected Comment token, got %v", token.ID)
+	}
+}
+
+func TestTokenizeLine_MultilineCommentWithTemplateExample(t *testing.T) {
+	// Multiline comments containing template examples should not cause errors
+	source := `{{/*
+Multi-Select Dropdown Component
+
+Usage:
+  {{template "multi-select" dict
+      "ID" "unit-select"
+      "Name" "units"
+      "Placeholder" "Select units..."
+      "Options" .UnitOptions
+      "MaxDisplay" 3
+      "ShowFilter" true
+  }}
+
+Options is a slice of maps with keys:
+  - Value: form value (required)
+  - Label: display text in dropdown (required)
+  - ShortName: compact display in collapsed summary (optional, defaults to Label)
+  - Icon: icon class name, e.g. "icon-airbnb" (optional)
+  - IsSelected: pre-selected state (optional)
+*/}}`
+	streams, errs := Tokenize([]byte(source))
+
+	if len(errs) != 0 {
+		t.Errorf("Expected 0 errors, got %d: %v", len(errs), errs)
+	}
+
+	if len(streams) != 1 {
+		t.Fatalf("Expected 1 stream, got %d", len(streams))
+	}
+
+	token := streams[0].Tokens[0]
+	if token.ID != Comment {
+		t.Errorf("Expected Comment token, got %v", token.ID)
+	}
+}
+
 func TestTokenizeLine_Errors_UnclosedParenthesis(t *testing.T) {
 	source := "{{ (len .Items }}"
 	streams, errs := Tokenize([]byte(source))

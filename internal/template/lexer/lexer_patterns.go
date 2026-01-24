@@ -26,8 +26,10 @@ func init() {
 
 	// Pre-compile template extraction patterns
 	compiledPatterns.loneDelimiter = regexp.MustCompile("{{|}}")
+	// Template comments {{/* ... */}} can contain any content including {{ and }}
+	// so we match them first, then fall back to regular template matching
 	compiledPatterns.templateStatement = regexp.MustCompile(
-		"(?:{{(?:[^{}]|[^{}]{|[^{}]}|[^{}]{}|[^{}]}{|[\n\r\t])*?}})",
+		`(?:{{/\*[\s\S]*?\*/}}|{{(?:[^{}]|[^{}]{|[^{}]}|[^{}]{}|[^{}]}{|[\n\r\t])*?}})`,
 	)
 
 	// Token patterns (order matters: more specific patterns must come first)
