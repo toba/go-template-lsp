@@ -77,6 +77,29 @@ if [ "$PUSH" = "true" ]; then
         echo "==> Pushing tag (GoReleaser will create release)..."
         git push origin "$NEW_VERSION"
         echo "==> Tag $NEW_VERSION pushed, GoReleaser workflow will create release"
+
+        # Update Zed extension version (gozer is sibling repo)
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        GOZER_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)/../gozer"
+        GOZER_TOML="$GOZER_DIR/extension.toml"
+        if [ -f "$GOZER_TOML" ]; then
+            # Strip 'v' prefix for extension.toml (uses 0.6.4 not v0.6.4)
+            EXT_VERSION=$(echo "$NEW_VERSION" | sed 's/^v//')
+            echo ""
+            echo "==> Updating gozer extension to $EXT_VERSION..."
+            sed -i '' "s/^version = \".*\"/version = \"$EXT_VERSION\"/" "$GOZER_TOML"
+
+            # Commit and push the extension update
+            (
+                cd "$GOZER_DIR"
+                git add extension.toml
+                git commit -m "bump version to $EXT_VERSION"
+                git push
+                echo "==> gozer extension updated and pushed"
+            )
+        else
+            echo "==> gozer extension.toml not found at $GOZER_TOML, skipping"
+        fi
     else
         echo "==> No existing tags, skipping version bump"
     fi
