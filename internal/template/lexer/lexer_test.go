@@ -837,3 +837,87 @@ func TestRange_Shrink(t *testing.T) {
 		t.Errorf("Expected end character 12, got %d", shrunk.End.Character)
 	}
 }
+
+func TestTokenize_FunctionWithKeywordPrefix(t *testing.T) {
+	// Test that function names containing keyword prefixes are tokenized correctly
+	// e.g. "breakAll" should be a single Function token, not "break" (Keyword) + "All" (error)
+	tests := []struct {
+		name     string
+		source   string
+		funcName string
+	}{
+		{
+			name:     "breakAll in pipe",
+			source:   "{{ .Field | breakAll }}",
+			funcName: "breakAll",
+		},
+		{
+			name:     "breakAll with method call",
+			source:   `{{ .BookedOn.Format "02 Jan" | breakAll }}`,
+			funcName: "breakAll",
+		},
+		{
+			name:     "endif function",
+			source:   "{{ .Field | endif }}",
+			funcName: "endif",
+		},
+		{
+			name:     "defined function",
+			source:   "{{ .Field | defined }}",
+			funcName: "defined",
+		},
+		{
+			name:     "ranged function",
+			source:   "{{ .Field | ranged }}",
+			funcName: "ranged",
+		},
+		{
+			name:     "continueLoop function",
+			source:   "{{ .Field | continueLoop }}",
+			funcName: "continueLoop",
+		},
+		{
+			name:     "within function",
+			source:   "{{ .Field | within }}",
+			funcName: "within",
+		},
+		{
+			name:     "blocked function",
+			source:   "{{ .Field | blocked }}",
+			funcName: "blocked",
+		},
+		{
+			name:     "iffy function",
+			source:   "{{ .Field | iffy }}",
+			funcName: "iffy",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			streams, errs := Tokenize([]byte(tt.source))
+
+			if len(errs) != 0 {
+				t.Errorf("Expected 0 errors, got %d: %v", len(errs), errs)
+			}
+
+			if len(streams) != 1 {
+				t.Fatalf("Expected 1 stream, got %d", len(streams))
+			}
+
+			// Find the function token after the pipe
+			foundFunc := false
+			for _, token := range streams[0].Tokens {
+				if token.ID == Function && string(token.Value) == tt.funcName {
+					foundFunc = true
+					break
+				}
+			}
+
+			if !foundFunc {
+				t.Errorf("Expected to find Function token '%s', tokens: %v",
+					tt.funcName, streams[0].Tokens)
+			}
+		})
+	}
+}

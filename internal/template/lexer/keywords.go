@@ -16,6 +16,8 @@ const (
 
 // KeywordPattern is the regex pattern matching all template keywords.
 // Used by the lexer to identify keywords in template blocks.
-const KeywordPattern = KeywordIf + "|" + KeywordElse + "|" + KeywordEnd + "|" +
+// The word boundary \b ensures keywords don't match when they're part of a longer identifier
+// (e.g., "breakAll" should not match "break" as a keyword).
+const KeywordPattern = `(?:` + KeywordIf + "|" + KeywordElse + "|" + KeywordEnd + "|" +
 	KeywordRange + "|" + KeywordDefine + "|" + KeywordTemplate + "|" +
-	KeywordBlock + "|" + KeywordWith + "|" + KeywordContinue + "|" + KeywordBreak
+	KeywordBlock + "|" + KeywordWith + "|" + KeywordContinue + "|" + KeywordBreak + `)\b`
