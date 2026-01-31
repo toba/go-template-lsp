@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // parseVariableNames parses a list of variable names (e.g., "$a, $b").

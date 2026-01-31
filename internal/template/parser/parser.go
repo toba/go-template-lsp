@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync/atomic"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 var uniqueUniversalCounter atomic.Int64

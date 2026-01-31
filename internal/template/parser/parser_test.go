@@ -3,8 +3,8 @@ package parser
 import (
 	"testing"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/testutil"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/testutil"
 )
 
 // tokenizeAndParse is a helper that tokenizes source and parses it.

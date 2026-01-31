@@ -3,7 +3,7 @@ package parser
 import (
 	"log"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // SymbolDefinition maps symbol names to AST nodes.

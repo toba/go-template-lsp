@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 func (e ParseError) String() string {

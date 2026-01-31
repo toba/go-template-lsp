@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"sync"
 
-	tmpl "github.com/STR-Consulting/go-template-lsp/internal/template"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/analyzer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	tmpl "github.com/toba/go-template-lsp/internal/template"
+	"github.com/toba/go-template-lsp/internal/template/analyzer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 var filesOpenedByEditor = make(map[string]string)

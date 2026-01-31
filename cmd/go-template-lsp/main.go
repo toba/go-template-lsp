@@ -16,11 +16,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/STR-Consulting/go-template-lsp/cmd/go-template-lsp/lsp"
-	tmpl "github.com/STR-Consulting/go-template-lsp/internal/template"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/analyzer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/cmd/go-template-lsp/lsp"
+	tmpl "github.com/toba/go-template-lsp/internal/template"
+	"github.com/toba/go-template-lsp/internal/template/analyzer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 // version is set by goreleaser at build time.

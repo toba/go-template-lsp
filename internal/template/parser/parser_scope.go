@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // groupMerger builds the AST by tracking open scopes and linking control flow statements.

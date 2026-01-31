@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 
-	checker "github.com/STR-Consulting/go-template-lsp/internal/template/analyzer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	checker "github.com/toba/go-template-lsp/internal/template/analyzer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 // FileAnalysisAndError pairs analysis results with any errors for a single file.

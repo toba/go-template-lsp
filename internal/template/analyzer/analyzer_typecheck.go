@@ -5,8 +5,8 @@ import (
 	"go/types"
 	"log"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 func unTuple(typ types.Type) [2]types.Type {

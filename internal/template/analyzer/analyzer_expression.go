@@ -6,8 +6,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 func definitionAnalysisMultiExpression(

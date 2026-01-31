@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/testutil"
+	"github.com/toba/go-template-lsp/internal/template/testutil"
 )
 
 func TestGroupMerger_IfEndNesting(t *testing.T) {

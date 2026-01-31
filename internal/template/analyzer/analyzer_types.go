@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"go/types"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 // InferenceFunc attempts to infer a symbol's type from a constraint.

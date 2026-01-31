@@ -3,8 +3,8 @@ package analyzer_test
 import (
 	"testing"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/analyzer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/testutil"
+	"github.com/toba/go-template-lsp/internal/template/analyzer"
+	"github.com/toba/go-template-lsp/internal/template/testutil"
 )
 
 func TestScanWorkspaceForFuncMap(t *testing.T) {

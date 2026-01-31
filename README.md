@@ -15,19 +15,19 @@ A Language Server Protocol (LSP) implementation for Go templates (`text/template
 
 ### Download Binary
 
-Download prebuilt binaries from [GitHub Releases](https://github.com/STR-Consulting/go-template-lsp/releases).
+Download prebuilt binaries from [GitHub Releases](https://github.com/toba/go-template-lsp/releases).
 
 ### Install from Source
 
 ```bash
-go install github.com/STR-Consulting/go-template-lsp/cmd/go-template-lsp@latest
+go install github.com/toba/go-template-lsp/cmd/go-template-lsp@latest
 ```
 
 ### Build from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/STR-Consulting/go-template-lsp.git
+git clone https://github.com/toba/go-template-lsp.git
 cd go-template-lsp
 
 # Build the binary
@@ -47,7 +47,7 @@ golangci-lint run
 
 ### Zed
 
-Use the [gozer](https://github.com/STR-Consulting/gozer) Zed extension, which automatically downloads this LSP.
+Use the [gozer](https://github.com/toba/gozer) Zed extension, which automatically downloads this LSP.
 
 ### Neovim (with nvim-lspconfig)
 

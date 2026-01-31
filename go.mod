@@ -1,4 +1,4 @@
-module github.com/STR-Consulting/go-template-lsp
+module github.com/toba/go-template-lsp
 
 go 1.25.6
 

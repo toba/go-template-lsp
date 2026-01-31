@@ -3,7 +3,7 @@ package parser
 import (
 	"errors"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // keywordHandler is a function that parses a specific keyword.

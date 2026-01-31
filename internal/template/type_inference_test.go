@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/internal/template"
+	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
 // =============================================================================

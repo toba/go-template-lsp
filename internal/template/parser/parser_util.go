@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // lookForAndSetGoCodeInComment checks if a comment contains "go:code" directive

@@ -4,10 +4,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/STR-Consulting/go-template-lsp/internal/template"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/lexer"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/parser"
-	"github.com/STR-Consulting/go-template-lsp/internal/template/testutil"
+	"github.com/toba/go-template-lsp/internal/template"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
+	"github.com/toba/go-template-lsp/internal/template/parser"
+	"github.com/toba/go-template-lsp/internal/template/testutil"
 )
 
 // TestLexerParserIntegration tests the full pipeline from source to AST.
