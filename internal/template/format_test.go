@@ -309,8 +309,7 @@ func TestFormat(t *testing.T) {
 				AttrWrapMode: "overflow",
 			},
 			expected: `<button type="button"
-   class="map-zoom-btn"
-   title="Expand">`,
+   class="map-zoom-btn" title="Expand">`,
 		},
 		{
 			name:  "all mode wraps every attribute",
@@ -356,8 +355,7 @@ func TestFormat(t *testing.T) {
 				AttrWrapMode: "overflow",
 			},
 			expected: `<img src="logo.png" alt="Company Logo"
-  width="200"
-  height="100" />`,
+  width="200" height="100" />`,
 		},
 		{
 			name:  "void element with attributes wrapping",
@@ -369,8 +367,7 @@ func TestFormat(t *testing.T) {
 				AttrWrapMode: "overflow",
 			},
 			expected: `<input type="text" name="username"
-  placeholder="Enter name"
-  required>`,
+  placeholder="Enter name" required>`,
 		},
 		{
 			name:  "template action as attribute",
@@ -452,8 +449,7 @@ title="Expand">`,
 				AttrWrapMode: "overflow",
 			},
 			expected: `<div class="very-long-class-name"
-  id="my-id"
-  data-value="something">`,
+  id="my-id" data-value="something">`,
 		},
 		{
 			name:  "closing > on tag with content after attrs",
@@ -500,6 +496,53 @@ title="Expand">`,
 				AttrWrapMode: "all",
 			},
 			expected: `<div class="short">`,
+		},
+		{
+			name:  "single long attr overflow mode skips wrapping",
+			input: `<path d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   100,
+				AttrWrapMode: "overflow",
+			},
+			expected: `<path d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+		},
+		{
+			name:  "single long attr all mode skips wrapping",
+			input: `<path d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   100,
+				AttrWrapMode: "all",
+			},
+			expected: `<path d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+		},
+		{
+			name:  "mix of short and long attrs still wraps",
+			input: `<path class="icon" d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   100,
+				AttrWrapMode: "all",
+			},
+			expected: `<path
+   class="icon"
+   d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />`,
+		},
+		{
+			name:  "overflow mode packs attrs on continuation lines",
+			input: `<section class="portfolio" hx-boost:inherited="true" hx-target:inherited="main" hx-swap:inherited="innerHTML" hx-push-url:inherited="true">`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   80,
+				AttrWrapMode: "overflow",
+			},
+			expected: `<section class="portfolio" hx-boost:inherited="true" hx-target:inherited="main"
+   hx-swap:inherited="innerHTML" hx-push-url:inherited="true">`,
 		},
 		{
 			name:  "default opts no wrapping",

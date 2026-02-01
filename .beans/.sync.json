@@ -1,6 +1,18 @@
 {
   "version": 1,
   "beans": {
+    "golsp-33oi": {
+      "clickup": {
+        "task_id": "868hamjh6",
+        "synced_at": "2026-02-01T19:29:29.915237Z"
+      }
+    },
+    "golsp-bue2": {
+      "clickup": {
+        "task_id": "868hamjh5",
+        "synced_at": "2026-02-01T19:29:29.947795Z"
+      }
+    },
     "golsp-lteb": {
       "clickup": {
         "task_id": "868ham023",

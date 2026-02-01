@@ -225,38 +225,45 @@ func wrapAttributes(
 			lines = append(lines, line)
 		}
 	} else {
-		// overflow mode: keep attrs on first line until one would overflow
-		firstLine := baseIndent + prefix
-		overflowed := false
-		var remaining []string
+		// overflow mode: pack as many attrs per line as fit within printWidth
+		currentLine := baseIndent + prefix
+		lineHasAttr := false
 
 		for i, attr := range attrs {
-			candidate := firstLine + " " + attr
+			sep := " "
+			if !lineHasAttr && currentLine == contIndent {
+				sep = "" // no extra space at start of continuation line
+			}
+			candidate := currentLine + sep + attr
 			if i == len(attrs)-1 {
 				candidate += closer + afterClose
 			}
-			if !overflowed && lineWidth(candidate, opts.TabSize) <= opts.PrintWidth {
-				firstLine = firstLine + " " + attr
+			if lineWidth(candidate, opts.TabSize) <= opts.PrintWidth || !lineHasAttr {
+				// Fits, or must take at least one attr per line
+				currentLine += sep + attr
+				lineHasAttr = true
 			} else {
-				overflowed = true
-				remaining = append(remaining, attr)
+				// Start a new continuation line
+				lines = append(lines, currentLine)
+				currentLine = contIndent + attr
+				lineHasAttr = true
 			}
 		}
 
-		if !overflowed {
-			// Everything fit — attach closer
-			lines = append(lines, firstLine+closer+afterClose)
-		} else {
-			// First line gets closer only if no remaining attrs
-			lines = append(lines, firstLine)
-			for i, attr := range remaining {
-				line := contIndent + attr
-				if i == len(remaining)-1 {
-					line += closer + afterClose
-				}
-				lines = append(lines, line)
-			}
+		// Emit the last line with the closer
+		lines = append(lines, currentLine+closer+afterClose)
+	}
+
+	// If every continuation line still exceeds printWidth, wrapping didn't help
+	allOverflow := true
+	for _, line := range lines[1:] {
+		if lineWidth(line, opts.TabSize) <= opts.PrintWidth {
+			allOverflow = false
+			break
 		}
+	}
+	if allOverflow {
+		return nil, false
 	}
 
 	return lines, true
