@@ -34,6 +34,7 @@ const (
 	MethodPublishDiagnostics  = "textDocument/publishDiagnostics"
 	MethodSemanticTokensFull  = "textDocument/semanticTokens/full"
 	MethodSemanticTokensRange = "textDocument/semanticTokens/range"
+	MethodFormatting          = "textDocument/formatting"
 )
 
 // Semantic token types (indices into the legend).

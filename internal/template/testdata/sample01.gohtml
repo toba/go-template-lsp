@@ -1,0 +1,112 @@
+{{define "sidebar" -}}
+<aside id="sidebar">
+   <header>
+      <a href="/" aria-label="Pacer home">
+         <img src="/web/images/logo.svg" alt=""/>
+         <span></span>
+      </a>
+      {{template "theme-toggle" -}}
+   </header>
+
+   {{if .PortfolioID -}}
+   <section class="portfolio" hx-boost:inherited="true" hx-target:inherited="main" hx-swap:inherited="innerHTML" hx-push-url:inherited="true">
+      <h1>{{.PortfolioName}}</h1>
+
+      <button type="button" id="chat-trigger">
+         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <path d="M12 6V2H8M2 12h2m16 0h2m-2 4a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>
+            <path class="eyes" d="M15 11v2M9 11v2"/>
+         </svg>
+         <span>Ask Lasso</span>
+      </button>
+
+      <a href="/portfolio/{{.PortfolioID}}"
+         {{if eq .Page "portfolios"}}aria-current="page"{{end}}>
+         <span class="icon icon-layout-dashboard"></span>
+         <span>Dashboard</span>
+      </a>
+
+      <h2>Units</h2>
+      <a href="/portfolio/{{.PortfolioID}}/unit-search"
+         {{if and (eq .Page "units") .PortfolioID}}aria-current="page"{{end}}>
+         <span class="icon icon-building-2"></span>
+         <span>Search</span>
+      </a>
+      <a href="/portfolio/{{.PortfolioID}}/unit-history"
+         {{if and (eq .Page "history") .PortfolioID}}aria-current="page"{{end}}>
+         <span class="icon icon-history"></span>
+         <span>History</span>
+      </a>
+
+      <h2>Reservations</h2>
+      <a href="/portfolio/{{.PortfolioID}}/res-trends"
+         {{if eq .Page "res-trends"}}aria-current="page"{{end}}>
+         <span class="icon icon-chart-no-axes-combined"></span>
+         <span>Trends</span>
+      </a>
+      <a href="/portfolio/{{.PortfolioID}}/res-search"
+         {{if eq .Page "res-search"}}aria-current="page"{{end}}>
+         <span class="icon icon-calendar-search"></span>
+         <span>Search</span>
+      </a>
+      <a href="/portfolio/{{.PortfolioID}}/res-grid"
+         {{if eq .Page "res-grid"}}aria-current="page"{{end}}>
+         <span class="icon icon-calendar-range"></span>
+         <span>Calendar</span>
+      </a>
+   </section>
+   {{- end}}
+
+   {{- if or .User.IsAdmin .User.IsSupervisor -}}
+   <menu hx-boost:inherited="true" hx-target:inherited="main" hx-swap:inherited="innerHTML" hx-push-url:inherited="true">
+      {{- if .User.IsAdmin -}}
+      <li><a href="/job"
+         {{if eq .ActiveMenu "job"}}aria-current="page"{{end}}>
+         <span class="icon icon-clipboard-check"></span>
+         <span>Scheduled Jobs</span>
+      </a></li>
+      {{- end -}}
+      <li><a href="/user"
+         {{if eq .ActiveMenu "users"}}aria-current="page"{{end}}>
+         <span class="icon icon-users"></span>
+         <span>Staff</span>
+      </a></li>
+   {{- end -}}
+   </menu>
+
+   {{- if .MapUnits}}
+   <section id="sidebar-map">
+      <div id="portfolio-map"></div>
+      <button type="button" class="map-zoom-btn" title="Expand map"
+         hx-get="/portfolio/{{.PortfolioID}}/map"
+         hx-target="#modal-container"
+         hx-swap="innerHTML">
+         <span class="icon icon-expand"></span>
+      </button>
+   </section>
+   <script type="application/json" id="portfolio-map-data">{{json .MapUnits}}</script>
+   {{- end}}
+
+   {{if .IsImpersonating -}}
+   <footer class="impersonate">
+      <button type="button" title="End impersonation"
+         hx-post="/impersonate/stop"
+         hx-swap="none">
+         <span class="icon icon-x"></span>
+         <span class="icon icon-venetian-mask"></span>
+         <span class="user-name">Viewing as {{.User.Name}}</span>
+      </button>
+   </footer>
+   {{- else -}}
+   <footer>
+      <form action="/auth/logout" method="POST">
+         <button type="submit" title="Sign out">
+            <span class="icon icon-log-out"></span>
+            <span class="user-name">{{.User.Name}}</span>
+         </button>
+      </form>
+   </footer>
+   {{- end}}
+</aside>
+
+{{- end -}}

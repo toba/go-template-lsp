@@ -6,6 +6,14 @@ echo "==> Running pre-commit checks..."
 golangci-lint run
 go test ./...
 
+# Sync beans to ClickUp (non-blocking)
+if ! git diff --quiet HEAD 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+    if command -v beanup &>/dev/null && [ -f .beans.clickup.yml ]; then
+        echo "==> Syncing beans to ClickUp..."
+        beanup --config .beans.clickup.yml sync >/dev/null 2>&1 &
+    fi
+fi
+
 # Stage and show changes
 echo "==> Staging changes..."
 git add -A

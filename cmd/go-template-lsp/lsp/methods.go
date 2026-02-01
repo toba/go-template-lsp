@@ -100,12 +100,13 @@ type SemanticTokensOptions struct {
 
 // ServerCapabilities describes the capabilities this server supports.
 type ServerCapabilities struct {
-	TextDocumentSync          int                    `json:"textDocumentSync"`
-	HoverProvider             bool                   `json:"hoverProvider"`
-	DefinitionProvider        bool                   `json:"definitionProvider"`
-	FoldingRangeProvider      bool                   `json:"foldingRangeProvider"`
-	DocumentHighlightProvider bool                   `json:"documentHighlightProvider"`
-	SemanticTokensProvider    *SemanticTokensOptions `json:"semanticTokensProvider,omitempty"`
+	TextDocumentSync           int                    `json:"textDocumentSync"`
+	HoverProvider              bool                   `json:"hoverProvider"`
+	DefinitionProvider         bool                   `json:"definitionProvider"`
+	FoldingRangeProvider       bool                   `json:"foldingRangeProvider"`
+	DocumentHighlightProvider  bool                   `json:"documentHighlightProvider"`
+	DocumentFormattingProvider bool                   `json:"documentFormattingProvider"`
+	SemanticTokensProvider     *SemanticTokensOptions `json:"semanticTokensProvider,omitempty"`
 }
 
 // InitializeResult is the response to the initialize request.
@@ -208,11 +209,17 @@ func ConvertParserRangeToLspRange(parserRange lexer.Range) Range {
 	}
 }
 
+// InitializationOptions holds formatting settings from the client's initializationOptions.
+type InitializationOptions struct {
+	PrintWidth   int    `json:"printWidth"`
+	AttrWrapMode string `json:"attrWrapMode"`
+}
+
 // ProcessInitializeRequest handles the initialize request.
 func ProcessInitializeRequest(
 	data []byte,
 	lspName, lspVersion string,
-) (response []byte, root string) {
+) (response []byte, root string, initOpts InitializationOptions) {
 	req := RequestMessage[InitializeParams]{}
 
 	err := json.Unmarshal(data, &req)
@@ -227,16 +234,25 @@ func ProcessInitializeRequest(
 		panic(msg)
 	}
 
+	// Parse initializationOptions
+	if req.Params.InitializationOptions != nil {
+		raw, marshalErr := json.Marshal(req.Params.InitializationOptions)
+		if marshalErr == nil {
+			_ = json.Unmarshal(raw, &initOpts)
+		}
+	}
+
 	res := ResponseMessage[InitializeResult]{
 		JsonRpc: JSONRPCVersion,
 		Id:      req.Id,
 		Result: InitializeResult{
 			Capabilities: ServerCapabilities{
-				TextDocumentSync:          TextDocumentSyncFull,
-				HoverProvider:             true,
-				DefinitionProvider:        true,
-				FoldingRangeProvider:      true,
-				DocumentHighlightProvider: true,
+				TextDocumentSync:           TextDocumentSyncFull,
+				HoverProvider:              true,
+				DefinitionProvider:         true,
+				FoldingRangeProvider:       true,
+				DocumentHighlightProvider:  true,
+				DocumentFormattingProvider: true,
 				SemanticTokensProvider: &SemanticTokensOptions{
 					Legend: SemanticTokensLegend{
 						TokenTypes:     SemanticTokenTypes,
@@ -259,7 +275,7 @@ func ProcessInitializeRequest(
 		panic(msg)
 	}
 
-	return response, req.Params.RootUri
+	return response, req.Params.RootUri, initOpts
 }
 
 // ProcessInitializedNotification handles the initialized notification.
@@ -937,4 +953,94 @@ func encodeSemanticTokens(tokens []SemanticToken) []uint {
 	}
 
 	return result
+}
+
+// FormattingOptions holds formatting options sent by the client.
+type FormattingOptions struct {
+	TabSize      int  `json:"tabSize"`
+	InsertSpaces bool `json:"insertSpaces"`
+}
+
+// DocumentFormattingParams holds parameters for textDocument/formatting.
+type DocumentFormattingParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Options      FormattingOptions      `json:"options"`
+}
+
+// TextEdit represents a text edit returned to the client.
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
+}
+
+// ProcessFormattingRequest handles textDocument/formatting.
+func ProcessFormattingRequest(
+	data []byte,
+	textFromClient map[string][]byte,
+	muTextFromClient *sync.Mutex,
+	initOpts InitializationOptions,
+) (response []byte, fileName string) {
+	req := RequestMessage[DocumentFormattingParams]{}
+
+	err := json.Unmarshal(data, &req)
+	if err != nil {
+		slog.Warn("Error unmarshalling formatting request: " + err.Error())
+		return nil, ""
+	}
+
+	fileUri := req.Params.TextDocument.Uri
+
+	muTextFromClient.Lock()
+	fileContent := textFromClient[fileUri]
+	muTextFromClient.Unlock()
+
+	var res ResponseMessage[[]TextEdit]
+	res.Id = req.Id
+	res.JsonRpc = req.JsonRpc
+
+	if fileContent == nil {
+		responseData, err := json.Marshal(res)
+		if err != nil {
+			slog.Warn("Error marshalling formatting response: " + err.Error())
+			return nil, fileName
+		}
+		return responseData, fileName
+	}
+
+	formatted := tmpl.Format(
+		fileContent,
+		tmpl.FormatOptions{
+			TabSize:      req.Params.Options.TabSize,
+			InsertSpaces: req.Params.Options.InsertSpaces,
+			PrintWidth:   initOpts.PrintWidth,
+			AttrWrapMode: initOpts.AttrWrapMode,
+		},
+	)
+
+	// Count lines in original content
+	lineCount := uint(0)
+	for _, b := range fileContent {
+		if b == '\n' {
+			lineCount++
+		}
+	}
+
+	// Replace the entire document
+	res.Result = []TextEdit{
+		{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: lineCount + 1, Character: 0},
+			},
+			NewText: string(formatted),
+		},
+	}
+
+	responseData, err := json.Marshal(res)
+	if err != nil {
+		slog.Warn("Error marshalling formatting response: " + err.Error())
+		return nil, fileName
+	}
+
+	return responseData, fileName
 }

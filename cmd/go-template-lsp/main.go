@@ -47,6 +47,7 @@ type requestCounter struct {
 		DidChange int
 	}
 	FoldingRange      int
+	Formatting        int
 	DocumentHighlight int
 	Definition        int
 	Hover             int
@@ -100,6 +101,7 @@ func main() {
 	var isExiting bool
 	var fileURI string
 	var fileContent []byte
+	var initOpts lsp.InitializationOptions
 
 	slog.Info("starting lsp server",
 		slog.String("server_name", serverName),
@@ -136,7 +138,11 @@ func main() {
 		case lsp.MethodInitialize:
 			serverCounter.Initialize++
 			var rootURI string
-			response, rootURI = lsp.ProcessInitializeRequest(data, serverName, version)
+			response, rootURI, initOpts = lsp.ProcessInitializeRequest(
+				data,
+				serverName,
+				version,
+			)
 			notifyTheRootPath(rootPathNotification, rootURI)
 			rootPathNotification = nil
 			isRequestResponse = true
@@ -201,6 +207,16 @@ func main() {
 				storage.ParsedFiles,
 				textFromClient,
 				muTextFromClient,
+			)
+
+		case lsp.MethodFormatting:
+			serverCounter.Formatting++
+			isRequestResponse = true
+			response, _ = lsp.ProcessFormattingRequest(
+				data,
+				textFromClient,
+				muTextFromClient,
+				initOpts,
 			)
 
 		case lsp.MethodDocumentHighlight:
