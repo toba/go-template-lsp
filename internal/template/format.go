@@ -27,9 +27,8 @@ var voidElements = map[string]bool{
 }
 
 var (
-	// Matches HTML open/close tags and template actions, capturing position for ordering.
-	htmlTagRe    = regexp.MustCompile(`<(/?)(\w+)`)
-	tmplActionRe = regexp.MustCompile(`\{\{-?\s*(if|range|with|define|block|else|end)\b`)
+	// Matches HTML open/close tags, capturing position for ordering.
+	htmlTagRe = regexp.MustCompile(`<(/?)(\w+)`)
 
 	// openTagRe matches the start of an HTML opening tag (not closing).
 	openTagRe = regexp.MustCompile(`^<([a-zA-Z][a-zA-Z0-9]*)(\s|$|>|/)`)
@@ -321,7 +320,7 @@ func findTagClose(s string) (int, string, string) {
 }
 
 // computeLineDeltas computes (beforeDelta, afterDelta) for a trimmed line by
-// collecting all HTML tag and template action events in source order.
+// collecting all HTML tag events in source order.
 //
 // beforeDelta: the minimum running delta (always <= 0), applied before writing the line.
 // afterDelta: the net delta minus beforeDelta, applied after writing the line.
@@ -347,26 +346,6 @@ func computeLineDeltas(line string) (before, after int) {
 			delta = -1
 		}
 		events = append(events, tagEvent{pos: match[0], delta: delta})
-	}
-
-	// Collect template action events
-	tmplMatches := tmplActionRe.FindAllStringSubmatchIndex(line, -1)
-	for _, match := range tmplMatches {
-		keyword := line[match[2]:match[3]]
-		pos := match[0]
-
-		switch keyword {
-		case "if", "range", "with", "define", "block":
-			events = append(events, tagEvent{pos: pos, delta: 1})
-		case "end":
-			events = append(events, tagEvent{pos: pos, delta: -1})
-		case "else":
-			events = append(
-				events,
-				tagEvent{pos: pos, delta: -1},
-				tagEvent{pos: pos, delta: 1},
-			)
-		}
 	}
 
 	// Sort events by position (insertion sort since typically few events)

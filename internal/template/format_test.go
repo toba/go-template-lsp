@@ -81,9 +81,9 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ if .Condition }}
-  <p>true</p>
+<p>true</p>
 {{ else }}
-  <p>false</p>
+<p>false</p>
 {{ end }}`,
 		},
 		{
@@ -93,7 +93,7 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ range .Items }}
-  <li>{{ . }}</li>
+<li>{{ . }}</li>
 {{ end }}`,
 		},
 		{
@@ -103,7 +103,7 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ with .Data }}
-  <span>{{ . }}</span>
+<span>{{ . }}</span>
 {{ end }}`,
 		},
 		{
@@ -113,7 +113,7 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ define "header" }}
-  <h1>Title</h1>
+<h1>Title</h1>
 {{ end }}`,
 		},
 		{
@@ -123,7 +123,7 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ block "content" . }}
-  <p>default</p>
+<p>default</p>
 {{ end }}`,
 		},
 		{
@@ -138,9 +138,9 @@ func TestFormat(t *testing.T) {
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `<div>
   {{ range .Items }}
-    <ul>
-      <li>{{ .Name }}</li>
-    </ul>
+  <ul>
+    <li>{{ .Name }}</li>
+  </ul>
   {{ end }}
 </div>`,
 		},
@@ -193,7 +193,7 @@ func TestFormat(t *testing.T) {
 {{- end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{- if .A }}
-  <p>yes</p>
+<p>yes</p>
 {{- end }}`,
 		},
 		{
@@ -205,9 +205,9 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ if .A }}
-  <p>a</p>
+<p>a</p>
 {{ else if .B }}
-  <p>b</p>
+<p>b</p>
 {{ end }}`,
 		},
 		{
@@ -219,9 +219,9 @@ func TestFormat(t *testing.T) {
 {{ end }}`,
 			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
 			expected: `{{ if .A }}
-  <p>a</p>
+<p>a</p>
 {{ else with .B }}
-  <p>b</p>
+<p>b</p>
 {{ end }}`,
 		},
 		{
@@ -241,14 +241,32 @@ func TestFormat(t *testing.T) {
 			expected: `<html>
   <body>
     {{ range .Pages }}
-      <div>
-        {{ if .Show }}
-          <p>{{ .Text }}</p>
-        {{ end }}
-      </div>
+    <div>
+      {{ if .Show }}
+      <p>{{ .Text }}</p>
+      {{ end }}
+    </div>
     {{ end }}
   </body>
 </html>`,
+		},
+		{
+			name: "define with HTML list and range",
+			input: `{{ define "list" }}
+<ul>
+{{ range .Items }}
+<li>{{ . }}</li>
+{{ end }}
+</ul>
+{{ end }}`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `{{ define "list" }}
+<ul>
+  {{ range .Items }}
+  <li>{{ . }}</li>
+  {{ end }}
+</ul>
+{{ end }}`,
 		},
 		{
 			name:     "blank lines preserved",
