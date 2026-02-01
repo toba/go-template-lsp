@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net/url"
+	"os"
 	"strconv"
 	"sync"
 
@@ -999,12 +1001,18 @@ func ProcessFormattingRequest(
 	res.JsonRpc = req.JsonRpc
 
 	if fileContent == nil {
-		responseData, err := json.Marshal(res)
-		if err != nil {
-			slog.Warn("Error marshalling formatting response: " + err.Error())
-			return nil, fileName
+		parsed, err := url.Parse(fileUri)
+		if err != nil || parsed.Path == "" {
+			slog.Warn("Cannot parse file URI for formatting: " + fileUri)
+			responseData, _ := json.Marshal(res)
+			return responseData, fileName
 		}
-		return responseData, fileName
+		fileContent, err = os.ReadFile(parsed.Path)
+		if err != nil {
+			slog.Warn("Cannot read file for formatting: " + err.Error())
+			responseData, _ := json.Marshal(res)
+			return responseData, fileName
+		}
 	}
 
 	formatted := tmpl.Format(

@@ -275,6 +275,18 @@ func TestFormat(t *testing.T) {
 			expected: "<div>\n\n  <p>text</p>\n\n</div>",
 		},
 
+		{
+			name:  "tabs in input replaced with spaces",
+			input: "{{define \"sidebar\" -}}\n<aside id=\"sidebar\">\n\t<header>\n\t\t<a href=\"/\" aria-label=\"Pacer home\">\n\t<img src=\"/web/images/logo.svg\" alt=\"\"/>\n\t\t\t<span></span>{{/* \"pacer\" SVG assigned in CSS */}}\n\t\t</a>\n\t</header>\n</aside>\n{{end}}",
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   100,
+				AttrWrapMode: "overflow",
+			},
+			expected: "{{define \"sidebar\" -}}\n<aside id=\"sidebar\">\n   <header>\n      <a href=\"/\" aria-label=\"Pacer home\">\n         <img src=\"/web/images/logo.svg\" alt=\"\"/>\n         <span></span>{{/* \"pacer\" SVG assigned in CSS */}}\n      </a>\n   </header>\n</aside>\n{{end}}",
+		},
+
 		// Attribute wrapping tests
 		{
 			name:  "tag under printWidth no wrapping",
