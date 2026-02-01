@@ -7,6 +7,7 @@ A Language Server Protocol (LSP) implementation for Go templates (`text/template
 - **Diagnostics**: Real-time syntax error detection as you type
 - **Hover**: Type information and documentation on hover over template variables and functions
 - **Go to Definition**: Navigate to template definitions (`{{define "name"}}`)
+- **Formatting**: Re-indent based on HTML and template nesting, with optional attribute wrapping
 - **Folding Ranges**: Collapse template blocks (`{{if}}...{{end}}`, `{{range}}...{{end}}`) and comments
 - **Semantic Tokens**: Enhanced syntax highlighting
 - **Document Highlight**: Highlight matching template keywords
@@ -69,6 +70,47 @@ lspconfig.gotmpl.setup{}
 ### Other Editors
 
 The LSP binary works with any editor that supports the Language Server Protocol. Configure your editor to run `go-template-lsp` for template files.
+
+## Formatting
+
+The formatter re-indents Go template files based on HTML tag and template action nesting. It respects the standard LSP `tabSize` and `insertSpaces` settings.
+
+### Attribute Wrapping
+
+When an HTML opening tag exceeds a configured line width, the formatter can wrap its attributes across multiple lines. Configure via `initializationOptions`:
+
+```json
+{
+  "initializationOptions": {
+    "printWidth": 120,
+    "attrWrapMode": "overflow"
+  }
+}
+```
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `printWidth` | `int` | `0` (disabled) | Maximum line width before wrapping attributes. Set to `0` to disable. |
+| `attrWrapMode` | `string` | `"overflow"` | `"overflow"`: only wrap attributes that push past `printWidth`. `"all"`: wrap every attribute onto its own line. |
+
+**`overflow` mode** keeps attributes on the first line as long as they fit, then wraps the rest:
+
+```html
+<button type="button"
+   class="map-zoom-btn"
+   title="Expand">
+```
+
+**`all` mode** puts every attribute on its own line:
+
+```html
+<button
+   type="button"
+   class="map-zoom-btn"
+   title="Expand">
+```
+
+Continuation lines are indented one level deeper than the tag. Multi-line tags already in the source are joined back into a single line before re-wrapping.
 
 ## Supported File Extensions
 
