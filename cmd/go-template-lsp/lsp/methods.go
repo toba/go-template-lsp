@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"sync"
 
 	tmpl "github.com/toba/go-template-lsp/internal/template"
 	"github.com/toba/go-template-lsp/internal/template/analyzer"
@@ -18,7 +17,7 @@ import (
 	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
-var filesOpenedByEditor = make(map[string]string)
+var FilesOpenedByEditor = make(map[string]string)
 
 // ID represents a JSON-RPC request ID that can be either a string or number.
 type ID int
@@ -351,7 +350,7 @@ func ProcessDidOpenTextDocumentNotification(
 
 	documentURI := request.Params.TextDocument.Uri
 	documentContent := request.Params.TextDocument.Text
-	filesOpenedByEditor[documentURI] = documentContent
+	FilesOpenedByEditor[documentURI] = documentContent
 
 	return documentURI, []byte(documentContent)
 }
@@ -406,7 +405,7 @@ func ProcessDidChangeTextDocumentNotification(
 
 	documentContent := documentChanges[0].Text
 	documentURI := request.Params.TextDocument.Uri
-	filesOpenedByEditor[documentURI] = documentContent
+	FilesOpenedByEditor[documentURI] = documentContent
 
 	return documentURI, []byte(documentContent)
 }
@@ -436,7 +435,7 @@ func ProcessDidCloseTextDocumentNotification(
 
 	documentPath := request.Params.TextDocument.Uri
 	documentContent := request.Params.TextDocument.Text
-	delete(filesOpenedByEditor, documentPath)
+	delete(FilesOpenedByEditor, documentPath)
 
 	return documentPath, []byte(documentContent)
 }
@@ -628,8 +627,7 @@ const (
 func ProcessFoldingRangeRequest(
 	data []byte,
 	parsedFiles map[string]*parser.GroupStatementNode,
-	textFromClient map[string][]byte,
-	muTextFromClient *sync.Mutex,
+	openFiles map[string]string,
 ) (response []byte, fileName string) {
 	req := RequestMessage[FoldingRangeParams]{}
 
@@ -642,18 +640,15 @@ func ProcessFoldingRangeRequest(
 	var rootNode *parser.GroupStatementNode = nil
 	fileUri := req.Params.TextDocument.Uri
 
-	muTextFromClient.Lock()
-	fileContent := textFromClient[fileUri]
+	fileContent, ok := openFiles[fileUri]
 
-	if fileContent != nil {
-		rootNode, _ = tmpl.ParseSingleFile(fileContent)
+	if ok {
+		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
 	}
 
 	if rootNode == nil {
 		rootNode = parsedFiles[fileUri]
 	}
-
-	muTextFromClient.Unlock()
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -661,7 +656,7 @@ func ProcessFoldingRangeRequest(
 			slog.Error(msg,
 				slog.Group("details",
 					slog.String("file_uri", fileUri),
-					slog.String("file_content", string(fileContent)),
+					slog.String("file_content", fileContent),
 				),
 			)
 			panic(msg)
@@ -753,8 +748,7 @@ type DocumentHighlightResult struct {
 func ProcessDocumentHighlightRequest(
 	data []byte,
 	parsedFiles map[string]*parser.GroupStatementNode,
-	textFromClient map[string][]byte,
-	muTextFromClient *sync.Mutex,
+	openFiles map[string]string,
 ) (response []byte, fileName string) {
 	req := RequestMessage[DocumentHighlightParams]{}
 
@@ -767,18 +761,15 @@ func ProcessDocumentHighlightRequest(
 	var rootNode *parser.GroupStatementNode
 	fileUri := req.Params.TextDocument.Uri
 
-	muTextFromClient.Lock()
-	fileContent := textFromClient[fileUri]
+	fileContent, ok := openFiles[fileUri]
 
-	if fileContent != nil {
-		rootNode, _ = tmpl.ParseSingleFile(fileContent)
+	if ok {
+		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
 	}
 
 	if rootNode == nil {
 		rootNode = parsedFiles[fileUri]
 	}
-
-	muTextFromClient.Unlock()
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -786,7 +777,7 @@ func ProcessDocumentHighlightRequest(
 			slog.Error(msg,
 				slog.Group("details",
 					slog.String("file_uri", fileUri),
-					slog.String("file_content", string(fileContent)),
+					slog.String("file_content", fileContent),
 				),
 			)
 			panic(msg)
@@ -845,8 +836,7 @@ type SemanticTokensResult struct {
 func ProcessSemanticTokensRequest(
 	data []byte,
 	parsedFiles map[string]*parser.GroupStatementNode,
-	textFromClient map[string][]byte,
-	muTextFromClient *sync.Mutex,
+	openFiles map[string]string,
 ) (response []byte, fileName string) {
 	req := RequestMessage[SemanticTokensParams]{}
 
@@ -859,18 +849,15 @@ func ProcessSemanticTokensRequest(
 	var rootNode *parser.GroupStatementNode
 	fileUri := req.Params.TextDocument.Uri
 
-	muTextFromClient.Lock()
-	fileContent := textFromClient[fileUri]
+	fileContent, ok := openFiles[fileUri]
 
-	if fileContent != nil {
-		rootNode, _ = tmpl.ParseSingleFile(fileContent)
+	if ok {
+		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
 	}
 
 	if rootNode == nil {
 		rootNode = parsedFiles[fileUri]
 	}
-
-	muTextFromClient.Unlock()
 
 	var res ResponseMessage[*SemanticTokensResult]
 	res.Id = req.Id
@@ -978,8 +965,7 @@ type TextEdit struct {
 // ProcessFormattingRequest handles textDocument/formatting.
 func ProcessFormattingRequest(
 	data []byte,
-	textFromClient map[string][]byte,
-	muTextFromClient *sync.Mutex,
+	openFiles map[string]string,
 	initOpts InitializationOptions,
 ) (response []byte, fileName string) {
 	req := RequestMessage[DocumentFormattingParams]{}
@@ -992,9 +978,11 @@ func ProcessFormattingRequest(
 
 	fileUri := req.Params.TextDocument.Uri
 
-	muTextFromClient.Lock()
-	fileContent := textFromClient[fileUri]
-	muTextFromClient.Unlock()
+	var fileContent []byte
+
+	if content, ok := openFiles[fileUri]; ok {
+		fileContent = []byte(content)
+	}
 
 	var res ResponseMessage[[]TextEdit]
 	res.Id = req.Id

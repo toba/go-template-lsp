@@ -205,8 +205,7 @@ func main() {
 			response, _ = lsp.ProcessFoldingRangeRequest(
 				data,
 				storage.ParsedFiles,
-				textFromClient,
-				muTextFromClient,
+				lsp.FilesOpenedByEditor,
 			)
 
 		case lsp.MethodFormatting:
@@ -214,8 +213,7 @@ func main() {
 			isRequestResponse = true
 			response, _ = lsp.ProcessFormattingRequest(
 				data,
-				textFromClient,
-				muTextFromClient,
+				lsp.FilesOpenedByEditor,
 				initOpts,
 			)
 
@@ -225,8 +223,7 @@ func main() {
 			response, _ = lsp.ProcessDocumentHighlightRequest(
 				data,
 				storage.ParsedFiles,
-				textFromClient,
-				muTextFromClient,
+				lsp.FilesOpenedByEditor,
 			)
 
 		case lsp.MethodSemanticTokensFull:
@@ -235,8 +232,7 @@ func main() {
 			response, _ = lsp.ProcessSemanticTokensRequest(
 				data,
 				storage.ParsedFiles,
-				textFromClient,
-				muTextFromClient,
+				lsp.FilesOpenedByEditor,
 			)
 
 		default:
