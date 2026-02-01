@@ -63,7 +63,7 @@ var TargetFileExtensions = []string{
 }
 
 const (
-	serverName = "Go Template LSP"
+	serverName = "Gozer"
 )
 
 var serverCounter requestCounter
