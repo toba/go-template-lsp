@@ -214,11 +214,24 @@ func wrapAttributes(
 	var lines []string
 
 	if mode == "all" {
-		// First line: just the tag name
-		lines = append(lines, baseIndent+prefix)
-		// Each attribute on its own line
-		for i, attr := range attrs {
-			line := contIndent + attr
+		// Check if first attr on tag line aligns with continuation indent
+		firstOnTagLine := len(attrs) > 1 &&
+			lineWidth(
+				baseIndent+prefix+" ",
+				opts.TabSize,
+			) == lineWidth(
+				contIndent,
+				opts.TabSize,
+			)
+		startIdx := 0
+		if firstOnTagLine {
+			lines = append(lines, baseIndent+prefix+" "+attrs[0])
+			startIdx = 1
+		} else {
+			lines = append(lines, baseIndent+prefix)
+		}
+		for i := startIdx; i < len(attrs); i++ {
+			line := contIndent + attrs[i]
 			if i == len(attrs)-1 {
 				line += closer + afterClose
 			}

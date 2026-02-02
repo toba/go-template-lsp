@@ -326,6 +326,52 @@ func TestFormat(t *testing.T) {
    title="Expand">`,
 		},
 		{
+			name:  "all mode keeps first attr on tag line when aligned",
+			input: `<a href="/path" class="link" id="nav">`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   30,
+				AttrWrapMode: "all",
+			},
+			expected: `<a href="/path"
+   class="link"
+   id="nav">`,
+		},
+		{
+			name:  "all mode tag line alignment no match keeps tag alone",
+			input: `<div class="container" id="main" role="presentation">`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   40,
+				AttrWrapMode: "all",
+			},
+			expected: `<div
+   class="container"
+   id="main"
+   role="presentation">`,
+		},
+		{
+			name: "all mode nested tag keeps first attr on tag line when aligned",
+			input: `<div>
+<a href="/path" class="link" id="nav">
+</a>
+</div>`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   30,
+				AttrWrapMode: "all",
+			},
+			expected: `<div>
+   <a href="/path"
+      class="link"
+      id="nav">
+   </a>
+</div>`,
+		},
+		{
 			name: "all mode nested tag gets extra indent",
 			input: `<div>
 <button type="button" class="map-zoom-btn" title="Expand">
