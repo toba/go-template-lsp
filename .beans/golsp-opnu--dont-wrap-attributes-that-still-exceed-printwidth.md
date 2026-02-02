@@ -1,10 +1,11 @@
 ---
 # golsp-opnu
 title: Don't wrap attributes that still exceed printWidth on their own line
-status: in-progress
+status: completed
 type: bug
+priority: normal
 created_at: 2026-02-01T19:37:00Z
-updated_at: 2026-02-01T19:37:00Z
+updated_at: 2026-02-02T16:55:22Z
 ---
 
 When an element has an attribute that exceeds printWidth and will STILL exceed printWidth even on its own line, don't bother reformatting. Example with printWidth 100:

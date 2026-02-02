@@ -86,6 +86,7 @@ func main() {
 	textChangedNotification := make(chan bool, 2)
 	textFromClient := make(map[string][]byte)
 	muTextFromClient := new(sync.Mutex)
+	muStdout := new(sync.Mutex)
 
 	go processDiagnosticNotification(
 		storage,
@@ -93,6 +94,7 @@ func main() {
 		textChangedNotification,
 		textFromClient,
 		muTextFromClient,
+		muStdout,
 	)
 
 	var request lsp.RequestMessage[any]
@@ -124,7 +126,9 @@ func main() {
 					request.JsonRpc,
 					request.Id,
 				)
+				muStdout.Lock()
 				lsp.SendToLspClient(os.Stdout, response)
+				muStdout.Unlock()
 			}
 			continue
 		}
@@ -240,7 +244,9 @@ func main() {
 		}
 
 		if isRequestResponse {
+			muStdout.Lock()
 			lsp.SendToLspClient(os.Stdout, response)
+			muStdout.Unlock()
 
 			res := lsp.ResponseMessage[any]{}
 			_ = json.Unmarshal(response, &res)
@@ -328,6 +334,7 @@ func processDiagnosticNotification(
 	textChangedNotification chan bool,
 	textFromClient map[string][]byte,
 	muTextFromClient *sync.Mutex,
+	muStdout *sync.Mutex,
 ) {
 	if rootPathNotification == nil || textChangedNotification == nil {
 		msg := "channels for 'processDiagnosticNotification()' not properly initialized"
@@ -492,7 +499,9 @@ func processDiagnosticNotification(
 				panic(msg)
 			}
 
+			muStdout.Lock()
 			lsp.SendToLspClient(os.Stdout, response)
+			muStdout.Unlock()
 		}
 
 		storageSanityCheck(storage)
