@@ -838,6 +838,99 @@ func TestRange_Shrink(t *testing.T) {
 	}
 }
 
+func TestTokenizeLine_NegativeNumbers(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		tokenID  Kind
+		tokenVal string
+	}{
+		{
+			name:     "negative integer",
+			source:   "{{ -1 }}",
+			tokenID:  Number,
+			tokenVal: "-1",
+		},
+		{
+			name:     "negative decimal",
+			source:   "{{ -3.14 }}",
+			tokenID:  Decimal,
+			tokenVal: "-3.14",
+		},
+		{
+			name:     "negative complex",
+			source:   "{{ -1i }}",
+			tokenID:  ComplexNumber,
+			tokenVal: "-1i",
+		},
+		{
+			name:     "negative number as function arg",
+			source:   "{{ addYears .Date -1 }}",
+			tokenID:  Number,
+			tokenVal: "-1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			streams, errs := Tokenize([]byte(tt.source))
+
+			if len(errs) != 0 {
+				t.Errorf("Expected 0 errors, got %d: %v", len(errs), errs)
+			}
+
+			if len(streams) != 1 {
+				t.Fatalf("Expected 1 stream, got %d", len(streams))
+			}
+
+			// Find the expected token
+			found := false
+			for _, token := range streams[0].Tokens {
+				if token.ID == tt.tokenID && string(token.Value) == tt.tokenVal {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Errorf("Expected to find %v token with value '%s', tokens: %v",
+					tt.tokenID, tt.tokenVal, streams[0].Tokens)
+			}
+		})
+	}
+}
+
+func TestTokenizeLine_TrimMarkerNotNegativeNumber(t *testing.T) {
+	// {{-1}} should be parsed as trim marker + number 1, not negative number
+	source := "{{-1 }}"
+	streams, errs := Tokenize([]byte(source))
+
+	// Should have errors because {{-...}} without space is an invalid trim marker
+	_ = errs
+
+	if len(streams) != 1 {
+		t.Fatalf("Expected 1 stream, got %d", len(streams))
+	}
+
+	// Should NOT have a negative number token
+	for _, token := range streams[0].Tokens {
+		if token.ID == Number && string(token.Value) == "-1" {
+			t.Error(
+				"{{-1}} should not produce a negative number token; - is a trim marker",
+			)
+		}
+	}
+}
+
+func TestTokenizeLine_NegativeNumberInComplexExpression(t *testing.T) {
+	source := `{{(addYears (index .CurrentNights 0).Date -1).Format "2006"}}`
+	_, errs := Tokenize([]byte(source))
+
+	if len(errs) != 0 {
+		t.Errorf("Expected 0 errors, got %d: %v", len(errs), errs)
+	}
+}
+
 func TestTokenize_FunctionWithKeywordPrefix(t *testing.T) {
 	// Test that function names containing keyword prefixes are tokenized correctly
 	// e.g. "breakAll" should be a single Function token, not "break" (Keyword) + "All" (error)

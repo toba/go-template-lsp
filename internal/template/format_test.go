@@ -591,6 +591,110 @@ title="Expand">`,
    hx-swap:inherited="innerHTML" hx-push-url:inherited="true">`,
 		},
 		{
+			name: "if/else with HTML tags resets level at else",
+			input: `<table>
+<tr>
+</tr><tr>
+</tr>
+{{if gt .Balance 0}}
+<tr class="positive">
+{{else}}
+<tr class="negative">
+{{end}}
+</tr>
+</table>`,
+			opts: FormatOptions{TabSize: 3, InsertSpaces: true},
+			expected: `<table>
+   <tr>
+   </tr><tr>
+   </tr>
+   {{if gt .Balance 0}}
+   <tr class="positive">
+   {{else}}
+   <tr class="negative">
+   {{end}}
+   </tr>
+</table>`,
+		},
+		{
+			name: "nested template blocks with HTML",
+			input: `<div>
+{{range .Items}}
+<ul>
+{{if .Show}}
+<li>{{.Name}}</li>
+{{else}}
+<li>hidden</li>
+{{end}}
+</ul>
+{{end}}
+</div>`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `<div>
+  {{range .Items}}
+  <ul>
+    {{if .Show}}
+    <li>{{.Name}}</li>
+    {{else}}
+    <li>hidden</li>
+    {{end}}
+  </ul>
+  {{end}}
+</div>`,
+		},
+		{
+			name: "inline if/end no stack change",
+			input: `<div>
+{{if .A}}{{end}}
+<p>text</p>
+</div>`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `<div>
+  {{if .A}}{{end}}
+  <p>text</p>
+</div>`,
+		},
+		{
+			name: "range with no else restores level at end",
+			input: `<table>
+{{range .Rows}}
+<tr>
+<td>{{.}}</td>
+</tr>
+{{end}}
+</table>`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `<table>
+  {{range .Rows}}
+  <tr>
+    <td>{{.}}</td>
+  </tr>
+  {{end}}
+</table>`,
+		},
+		{
+			name: "else if resets level like else",
+			input: `<div>
+{{if .A}}
+<span>a</span>
+{{else if .B}}
+<span>b</span>
+{{else}}
+<span>c</span>
+{{end}}
+</div>`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `<div>
+  {{if .A}}
+  <span>a</span>
+  {{else if .B}}
+  <span>b</span>
+  {{else}}
+  <span>c</span>
+  {{end}}
+</div>`,
+		},
+		{
 			name:  "default opts no wrapping",
 			input: `<button type="button" class="map-zoom-btn" title="Expand">`,
 			// PrintWidth defaults to 0, so no wrapping

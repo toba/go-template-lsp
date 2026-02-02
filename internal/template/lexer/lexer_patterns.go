@@ -51,15 +51,15 @@ func init() {
 			ID:    Character,
 		},
 		{
-			Regex: regexp.MustCompile(`(?:\d+|\d*[.]\d+)i`),
+			Regex: regexp.MustCompile(`(?:-)?(?:\d+|\d*[.]\d+)i`),
 			ID:    ComplexNumber,
 		},
 		{
-			Regex: regexp.MustCompile(`\d*[.]\d+`),
+			Regex: regexp.MustCompile(`(?:-)?\d*[.]\d+`),
 			ID:    Decimal,
 		},
 		{
-			Regex: regexp.MustCompile(`\d+`),
+			Regex: regexp.MustCompile(`(?:-)?\d+`),
 			ID:    Number,
 		},
 		{

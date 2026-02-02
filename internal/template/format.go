@@ -38,6 +38,13 @@ var (
 	attrTokenRe = regexp.MustCompile(
 		`(\{\{.*?\}\}(?:[^\s<>]*\{\{.*?\}\})*[^\s<>]*|\S+?="[^"]*"|\S+?='[^']*'|[^\s>]+)`,
 	)
+
+	// tmplBlockRe matches template block-opening keywords.
+	tmplBlockRe = regexp.MustCompile(`\{\{-?\s*(if|range|with|define|block)\b`)
+	// tmplElseRe matches template else/else if/else with keywords.
+	tmplElseRe = regexp.MustCompile(`\{\{-?\s*else\b`)
+	// tmplEndRe matches template end keywords.
+	tmplEndRe = regexp.MustCompile(`\{\{-?\s*end\b`)
 )
 
 // FormatOptions holds configuration for the formatter.
@@ -75,12 +82,42 @@ func Format(source []byte, opts FormatOptions) []byte {
 	level := 0
 	var result []string
 
+	// blockStack saves the HTML indent level at the start of each template
+	// control block (if/range/with/define/block) so that {{else}} and {{end}}
+	// can restore it, preventing drift from mutually exclusive branches.
+	var blockStack []int
+
 	for _, line := range lines {
 		trimmed := strings.TrimLeft(line, " \t")
 
 		if trimmed == "" {
 			result = append(result, "")
 			continue
+		}
+
+		// Count template block keywords to manage the level stack.
+		opens := len(tmplBlockRe.FindAllString(trimmed, -1))
+		elses := len(tmplElseRe.FindAllString(trimmed, -1))
+		ends := len(tmplEndRe.FindAllString(trimmed, -1))
+
+		// At {{else}}: restore level to block entry for indenting, then reset
+		// for the new branch. At {{end}}: restore for indenting, but preserve
+		// the last branch's net HTML delta for subsequent lines.
+		var postLevel int
+		hasRestore := false
+		if elses > 0 && len(blockStack) > 0 {
+			saved := blockStack[len(blockStack)-1]
+			level = saved     // indent {{else}} at block entry level
+			postLevel = saved // new branch starts fresh
+			hasRestore = true
+		}
+		if ends > 0 && len(blockStack) > 0 {
+			saved := blockStack[len(blockStack)-1]
+			branchDelta := level - saved
+			postLevel = saved + branchDelta // keep last branch's HTML delta
+			level = saved                   // indent {{end}} at block entry level
+			blockStack = blockStack[:len(blockStack)-1]
+			hasRestore = true
 		}
 
 		before, after := computeLineDeltas(trimmed)
@@ -104,10 +141,20 @@ func Format(source []byte, opts FormatOptions) []byte {
 			result = append(result, indented)
 		}
 
-		// Apply after delta (indent increase for next lines)
-		level += after
-		if level < 0 {
-			level = 0
+		// After indenting: if we restored for a template keyword, set the
+		// post-indent level; otherwise apply normal HTML after delta.
+		if hasRestore {
+			level = postLevel
+		} else {
+			level += after
+			if level < 0 {
+				level = 0
+			}
+		}
+
+		// Push level at block open — after computing HTML deltas for this line.
+		for range opens {
+			blockStack = append(blockStack, level)
 		}
 	}
 
