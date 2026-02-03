@@ -36,7 +36,7 @@ var (
 	// attrTokenRe matches individual attribute chunks: name="value", name='value',
 	// name, or template actions {{...}}.
 	attrTokenRe = regexp.MustCompile(
-		`(\{\{.*?\}\}(?:[^\s<>]*\{\{.*?\}\})*[^\s<>]*|\S+?="[^"]*"|\S+?='[^']*'|[^\s>]+)`,
+		`(\{\{.*?\}\}(?:[^\s<>]*\{\{.*?\}\})*[^\s<>]*|\S+?="(?:\{\{.*?\}\}|[^"])*"|\S+?='(?:\{\{.*?\}\}|[^'])*'|[^\s>]+)`,
 	)
 
 	// tmplBlockRe matches template block-opening keywords.
@@ -325,15 +325,9 @@ func wrapAttributes(
 		lines = append(lines, currentLine+closer+afterClose)
 	}
 
-	// If every continuation line still exceeds printWidth, wrapping didn't help
-	allOverflow := true
-	for _, line := range lines[1:] {
-		if lineWidth(line, opts.TabSize) <= opts.PrintWidth {
-			allOverflow = false
-			break
-		}
-	}
-	if allOverflow {
+	// With only one attribute, wrapping just moves it to the next line without
+	// reducing the overall width — skip wrapping in that case.
+	if len(attrs) <= 1 {
 		return nil, false
 	}
 

@@ -741,6 +741,24 @@ title="Expand">`,
 {{end}}`,
 		},
 		{
+			name: "attribute with template action containing inner quotes",
+			input: `<th scope="col" class="booked-on" data-sort-field="booked_on" aria-sort="{{if eq .SortBy "booked_on"}}ascending{{else if eq .SortBy "-booked_on"}}descending{{else}}none{{end}}">
+Booked<br/>On
+<span class="sort-icon"></span>
+</th>`,
+			opts: FormatOptions{
+				TabSize:      3,
+				InsertSpaces: true,
+				PrintWidth:   100,
+				AttrWrapMode: "overflow",
+			},
+			expected: `<th scope="col" class="booked-on" data-sort-field="booked_on"
+   aria-sort="{{if eq .SortBy "booked_on"}}ascending{{else if eq .SortBy "-booked_on"}}descending{{else}}none{{end}}">
+   Booked<br/>On
+   <span class="sort-icon"></span>
+</th>`,
+		},
+		{
 			name:  "default opts no wrapping",
 			input: `<button type="button" class="map-zoom-btn" title="Expand">`,
 			// PrintWidth defaults to 0, so no wrapping
