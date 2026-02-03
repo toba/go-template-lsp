@@ -61,6 +61,77 @@ type tagEvent struct {
 	delta int // +1 for open, -1 for close
 }
 
+// countStructuralKeywords counts template block-open, else, and end keywords on
+// a line, cancelling any fully-inline blocks (matched open+end pairs) along with
+// all elses that fall between them. Only unmatched (structural) keywords are counted.
+func countStructuralKeywords(line string) (opens, elses, ends int) {
+	type kw struct {
+		pos  int
+		kind byte // 'o' open, 'e' else, 'n' end
+	}
+
+	openMatches := tmplBlockRe.FindAllStringIndex(line, -1)
+	elseMatches := tmplElseRe.FindAllStringIndex(line, -1)
+	endMatches := tmplEndRe.FindAllStringIndex(line, -1)
+	all := make([]kw, 0, len(openMatches)+len(elseMatches)+len(endMatches))
+	for _, m := range openMatches {
+		all = append(all, kw{m[0], 'o'})
+	}
+	for _, m := range elseMatches {
+		all = append(all, kw{m[0], 'e'})
+	}
+	for _, m := range endMatches {
+		all = append(all, kw{m[0], 'n'})
+	}
+
+	// Sort by position (insertion sort; typically very few items).
+	for i := 1; i < len(all); i++ {
+		for j := i; j > 0 && all[j].pos < all[j-1].pos; j-- {
+			all[j], all[j-1] = all[j-1], all[j]
+		}
+	}
+
+	// Mark inline pairs: walk left-to-right with a stack of open positions.
+	inline := make([]bool, len(all))
+	var stack []int // indices into all
+	for i, k := range all {
+		switch k.kind {
+		case 'o':
+			stack = append(stack, i)
+		case 'n':
+			if len(stack) > 0 {
+				openIdx := stack[len(stack)-1]
+				stack = stack[:len(stack)-1]
+				// Mark the open and end as inline.
+				inline[openIdx] = true
+				inline[i] = true
+				// Mark all elses between them as inline too.
+				for j := openIdx + 1; j < i; j++ {
+					if all[j].kind == 'e' {
+						inline[j] = true
+					}
+				}
+			}
+		}
+	}
+
+	// Count only structural (non-inline) keywords.
+	for i, k := range all {
+		if inline[i] {
+			continue
+		}
+		switch k.kind {
+		case 'o':
+			opens++
+		case 'e':
+			elses++
+		case 'n':
+			ends++
+		}
+	}
+	return
+}
+
 // Format re-indents the source based on HTML tag and Go template control block nesting.
 // Only leading whitespace is changed; content within lines is never modified.
 // When PrintWidth > 0, opening HTML tags that exceed the width are wrapped.
@@ -95,21 +166,8 @@ func Format(source []byte, opts FormatOptions) []byte {
 			continue
 		}
 
-		// Count template block keywords to manage the level stack.
-		opens := len(tmplBlockRe.FindAllString(trimmed, -1))
-		elses := len(tmplElseRe.FindAllString(trimmed, -1))
-		ends := len(tmplEndRe.FindAllString(trimmed, -1))
-
-		// Cancel inline template blocks (open + end on same line = no stack effect).
-		if opens > 0 && ends > 0 {
-			matched := min(opens, ends)
-			opens -= matched
-			ends -= matched
-			elses -= matched
-			if elses < 0 {
-				elses = 0
-			}
-		}
+		// Count structural template block keywords (excluding inline pairs).
+		opens, elses, ends := countStructuralKeywords(trimmed)
 
 		// At {{else}}: restore level to block entry for indenting, then reset
 		// for the new branch. At {{end}}: restore for indenting, but preserve

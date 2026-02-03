@@ -759,6 +759,20 @@ Booked<br/>On
 </th>`,
 		},
 		{
+			name: "inline if/else if/else/end in attribute inside range does not break indentation",
+			input: `{{range .Columns}}
+<th aria-sort="{{if eq .Sort "asc"}}ascending{{else if eq .Sort "desc"}}descending{{else}}none{{end}}">
+<span>{{.Label}}</span>
+</th>
+{{end}}`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `{{range .Columns}}
+<th aria-sort="{{if eq .Sort "asc"}}ascending{{else if eq .Sort "desc"}}descending{{else}}none{{end}}">
+  <span>{{.Label}}</span>
+</th>
+{{end}}`,
+		},
+		{
 			name:  "default opts no wrapping",
 			input: `<button type="button" class="map-zoom-btn" title="Expand">`,
 			// PrintWidth defaults to 0, so no wrapping
