@@ -100,6 +100,17 @@ func Format(source []byte, opts FormatOptions) []byte {
 		elses := len(tmplElseRe.FindAllString(trimmed, -1))
 		ends := len(tmplEndRe.FindAllString(trimmed, -1))
 
+		// Cancel inline template blocks (open + end on same line = no stack effect).
+		if opens > 0 && ends > 0 {
+			matched := min(opens, ends)
+			opens -= matched
+			ends -= matched
+			elses -= matched
+			if elses < 0 {
+				elses = 0
+			}
+		}
+
 		// At {{else}}: restore level to block entry for indenting, then reset
 		// for the new branch. At {{end}}: restore for indenting, but preserve
 		// the last branch's net HTML delta for subsequent lines.

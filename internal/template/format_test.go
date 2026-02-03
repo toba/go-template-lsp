@@ -695,6 +695,52 @@ title="Expand">`,
 </div>`,
 		},
 		{
+			name: "inline if/end with HTML inside outer range",
+			input: `{{range .Items}}
+{{if .StreetAddress -}}<p>{{.StreetAddress}}</p>{{end}}
+<time>{{.Date}}</time>
+{{end}}`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `{{range .Items}}
+{{if .StreetAddress -}}<p>{{.StreetAddress}}</p>{{end}}
+<time>{{.Date}}</time>
+{{end}}`,
+		},
+		{
+			name: "inline if/end in HTML attribute inside nested structure",
+			input: `<section>
+<div class="modal-body{{if and .Lat .Lng}} mapped{{end}}">
+<p>content</p>
+</div>
+</section>`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `<section>
+  <div class="modal-body{{if and .Lat .Lng}} mapped{{end}}">
+    <p>content</p>
+  </div>
+</section>`,
+		},
+		{
+			name: "real template: define > dialog > section > inline if > time",
+			input: `{{define "event-dialog"}}
+<dialog>
+<section>
+{{if .StreetAddress -}}<p>{{.StreetAddress}}</p>{{end}}
+<time>{{.Date}}</time>
+</section>
+</dialog>
+{{end}}`,
+			opts: FormatOptions{TabSize: 2, InsertSpaces: true},
+			expected: `{{define "event-dialog"}}
+<dialog>
+  <section>
+    {{if .StreetAddress -}}<p>{{.StreetAddress}}</p>{{end}}
+    <time>{{.Date}}</time>
+  </section>
+</dialog>
+{{end}}`,
+		},
+		{
 			name:  "default opts no wrapping",
 			input: `<button type="button" class="map-zoom-btn" title="Expand">`,
 			// PrintWidth defaults to 0, so no wrapping
