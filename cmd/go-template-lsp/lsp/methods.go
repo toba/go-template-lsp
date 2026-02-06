@@ -9,7 +9,9 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	tmpl "github.com/toba/go-template-lsp/internal/template"
 	"github.com/toba/go-template-lsp/internal/template/analyzer"
@@ -1039,4 +1041,97 @@ func ProcessFormattingRequest(
 	}
 
 	return responseData, fileName
+}
+
+// Registration represents a single capability registration per LSP spec.
+type Registration struct {
+	Id              string `json:"id"`
+	Method          string `json:"method"`
+	RegisterOptions any    `json:"registerOptions"`
+}
+
+// RegistrationParams holds the parameters for client/registerCapability.
+type RegistrationParams struct {
+	Registrations []Registration `json:"registrations"`
+}
+
+// FileSystemWatcher describes a file pattern to watch.
+type FileSystemWatcher struct {
+	GlobPattern string `json:"globPattern"`
+	Kind        int    `json:"kind"`
+}
+
+// DidChangeWatchedFilesRegistrationOptions specifies watchers to register.
+type DidChangeWatchedFilesRegistrationOptions struct {
+	Watchers []FileSystemWatcher `json:"watchers"`
+}
+
+// FileEvent represents a file change event from the client.
+type FileEvent struct {
+	Uri  string `json:"uri"`
+	Type int    `json:"type"`
+}
+
+// DidChangeWatchedFilesParams holds parameters for workspace/didChangeWatchedFiles.
+type DidChangeWatchedFilesParams struct {
+	Changes []FileEvent `json:"changes"`
+}
+
+// BuildRegisterFileWatcherRequest creates the client/registerCapability JSON
+// to watch for Go file changes.
+func BuildRegisterFileWatcherRequest(requestID int) []byte {
+	id := ID(requestID)
+	req := RequestMessage[RegistrationParams]{
+		JsonRpc: JSONRPCVersion,
+		Id:      id,
+		Method:  MethodRegisterCapability,
+		Params: RegistrationParams{
+			Registrations: []Registration{
+				{
+					Id:     "go-file-watcher",
+					Method: MethodDidChangeWatchedFiles,
+					RegisterOptions: DidChangeWatchedFilesRegistrationOptions{
+						Watchers: []FileSystemWatcher{
+							{
+								GlobPattern: "**/*.go",
+								Kind:        WatchKindCreate | WatchKindChange | WatchKindDelete,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(req)
+	if err != nil {
+		slog.Error("error marshalling registerCapability request: " + err.Error())
+		return nil
+	}
+
+	return data
+}
+
+// ProcessDidChangeWatchedFilesNotification parses the notification and returns
+// true if any non-test .go files changed.
+func ProcessDidChangeWatchedFilesNotification(data []byte) bool {
+	var notification NotificationMessage[DidChangeWatchedFilesParams]
+
+	err := json.Unmarshal(data, &notification)
+	if err != nil {
+		slog.Warn("error unmarshalling didChangeWatchedFiles: " + err.Error())
+		return false
+	}
+
+	for _, change := range notification.Params.Changes {
+		path := change.Uri
+		if strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
+			base := filepath.Base(path)
+			if !strings.HasPrefix(base, ".") {
+				return true
+			}
+		}
+	}
+
+	return false
 }

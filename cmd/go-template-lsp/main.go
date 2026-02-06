@@ -46,13 +46,14 @@ type requestCounter struct {
 		DidOpen   int
 		DidChange int
 	}
-	FoldingRange      int
-	Formatting        int
-	DocumentHighlight int
-	Definition        int
-	Hover             int
-	SemanticTokens    int
-	Other             int
+	FoldingRange          int
+	Formatting            int
+	DocumentHighlight     int
+	Definition            int
+	Hover                 int
+	SemanticTokens        int
+	DidChangeWatchedFiles int
+	Other                 int
 }
 
 // TargetFileExtensions lists the file extensions this LSP supports.
@@ -84,14 +85,17 @@ func main() {
 
 	rootPathNotification := make(chan string, 2)
 	textChangedNotification := make(chan bool, 2)
+	goFilesChangedNotification := make(chan bool, 2)
 	textFromClient := make(map[string][]byte)
 	muTextFromClient := new(sync.Mutex)
 	muStdout := new(sync.Mutex)
+	serverRequestId := 1
 
 	go processDiagnosticNotification(
 		storage,
 		rootPathNotification,
 		textChangedNotification,
+		goFilesChangedNotification,
 		textFromClient,
 		muTextFromClient,
 		muStdout,
@@ -155,6 +159,15 @@ func main() {
 			serverCounter.Initialized++
 			isRequestResponse = false
 			lsp.ProcessInitializedNotification(data)
+
+			// Register file watcher for Go files
+			watcherReq := lsp.BuildRegisterFileWatcherRequest(serverRequestId)
+			serverRequestId++
+			if watcherReq != nil {
+				muStdout.Lock()
+				lsp.SendToLspClient(os.Stdout, watcherReq)
+				muStdout.Unlock()
+			}
 
 		case lsp.MethodShutdown:
 			serverCounter.Shutdown++
@@ -238,6 +251,15 @@ func main() {
 				storage.ParsedFiles,
 				lsp.FilesOpenedByEditor,
 			)
+
+		case lsp.MethodDidChangeWatchedFiles:
+			serverCounter.DidChangeWatchedFiles++
+			isRequestResponse = false
+			if lsp.ProcessDidChangeWatchedFilesNotification(data) {
+				if len(goFilesChangedNotification) == 0 {
+					goFilesChangedNotification <- true
+				}
+			}
 
 		default:
 			serverCounter.Other++
@@ -327,11 +349,27 @@ func notifyTheRootPath(rootPathNotification chan string, rootURI string) {
 	close(rootPathNotification)
 }
 
+// customFunctionsEqual returns true if two custom function maps have the same keys.
+func customFunctionsEqual(
+	a, b map[string]*tmpl.FunctionDefinition,
+) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for name := range a {
+		if _, ok := b[name]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // processDiagnosticNotification runs diagnostics and sends notifications to the client.
 func processDiagnosticNotification(
 	storage *workspaceStore,
 	rootPathNotification chan string,
 	textChangedNotification chan bool,
+	goFilesChangedNotification chan bool,
 	textFromClient map[string][]byte,
 	muTextFromClient *sync.Mutex,
 	muStdout *sync.Mutex,
@@ -359,6 +397,7 @@ func processDiagnosticNotification(
 	rootPath = uriToFilePath(rootPath)
 
 	// Scan for custom template functions defined in Go source files
+	var customFunctions map[string]*tmpl.FunctionDefinition
 	customFuncs, err := analyzer.ScanWorkspaceForFuncMap(rootPath)
 	if err != nil {
 		slog.Warn(
@@ -366,6 +405,7 @@ func processDiagnosticNotification(
 			slog.String("error", err.Error()),
 		)
 	} else if len(customFuncs) > 0 {
+		customFunctions = customFuncs
 		tmpl.SetWorkspaceCustomFunctions(customFuncs)
 		funcNames := make([]string, 0, len(customFuncs))
 		for name := range customFuncs {
@@ -419,11 +459,66 @@ func processDiagnosticNotification(
 	var chainedFiles []tmpl.FileAnalysisAndError
 	cloneTextFromClient := make(map[string][]byte)
 
-	for range textChangedNotification {
+	for {
+		var fullReanalysis bool
+
+		select {
+		case _, ok := <-textChangedNotification:
+			if !ok {
+				return
+			}
+
+		case _, ok := <-goFilesChangedNotification:
+			if !ok {
+				return
+			}
+			// Drain extra signals
+			for len(goFilesChangedNotification) > 0 {
+				<-goFilesChangedNotification
+			}
+
+			// Re-scan for custom template functions
+			newFuncs, scanErr := analyzer.ScanWorkspaceForFuncMap(rootPath)
+			if scanErr != nil {
+				slog.Warn(
+					"failed to re-scan for custom template functions",
+					slog.String("error", scanErr.Error()),
+				)
+				continue
+			}
+
+			if customFunctionsEqual(customFunctions, newFuncs) {
+				continue
+			}
+
+			customFunctions = newFuncs
+			tmpl.SetWorkspaceCustomFunctions(newFuncs)
+
+			funcNames := make([]string, 0, len(newFuncs))
+			for name := range newFuncs {
+				funcNames = append(funcNames, name)
+			}
+			slog.Info(
+				"custom template functions changed, re-analyzing workspace",
+				slog.Any("functions", funcNames),
+			)
+
+			// Re-queue all template files for analysis
+			muTextFromClient.Lock()
+			maps.Copy(textFromClient, storage.RawFiles)
+			if len(textFromClient) > 0 && len(textChangedNotification) == 0 {
+				textChangedNotification <- true
+			}
+			muTextFromClient.Unlock()
+
+			fullReanalysis = true
+
+			// Wait for the textChangedNotification we just sent
+			<-textChangedNotification
+		}
+
 		if len(textFromClient) == 0 {
-			msg := "got a change notification but textFromClient was empty"
-			slog.Error(msg)
-			panic(msg)
+			continue
 		}
 
 		muTextFromClient.Lock()
@@ -460,7 +555,7 @@ func processDiagnosticNotification(
 
 		chainedFiles = nil
 
-		if len(cloneTextFromClient) == len(storage.ParsedFiles) {
+		if fullReanalysis || len(cloneTextFromClient) == len(storage.ParsedFiles) {
 			chainedFiles = tmpl.DefinitionAnalysisWithinWorkspace(storage.ParsedFiles)
 		} else if len(cloneTextFromClient) > 0 {
 			chainedFiles = tmpl.DefinitionAnalysisChainTriggeredByBatchFileChange(

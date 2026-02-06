@@ -9,6 +9,144 @@ import (
 	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
+func TestCustomFunctionsEqual(t *testing.T) {
+	tests := []struct {
+		name     string
+		a, b     map[string]*tmpl.FunctionDefinition
+		expected bool
+	}{
+		{
+			name:     "both nil",
+			a:        nil,
+			b:        nil,
+			expected: true,
+		},
+		{
+			name:     "both empty",
+			a:        map[string]*tmpl.FunctionDefinition{},
+			b:        map[string]*tmpl.FunctionDefinition{},
+			expected: true,
+		},
+		{
+			name:     "nil vs empty",
+			a:        nil,
+			b:        map[string]*tmpl.FunctionDefinition{},
+			expected: true,
+		},
+		{
+			name: "same keys",
+			a: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+			},
+			b: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "b.go"),
+				"upper": analyzer.NewCustomFunctionDefinition("upper", "b.go"),
+			},
+			expected: true,
+		},
+		{
+			name: "different lengths",
+			a: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+			},
+			b: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+			},
+			expected: false,
+		},
+		{
+			name: "different keys",
+			a: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+			},
+			b: map[string]*tmpl.FunctionDefinition{
+				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+			},
+			expected: false,
+		},
+		{
+			name: "one nil one populated",
+			a:    nil,
+			b: map[string]*tmpl.FunctionDefinition{
+				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := customFunctionsEqual(tc.a, tc.b)
+			if result != tc.expected {
+				t.Errorf("expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}
+
+// TestHotReloadCustomFunctions verifies that changing custom functions
+// and re-analyzing templates clears "function undefined" errors.
+func TestHotReloadCustomFunctions(t *testing.T) {
+	// Template uses a custom function "myfunc" in a pipe expression,
+	// which the parser recognizes as a function call.
+	content := []byte(`{{.Name | myfunc}}`)
+
+	parseTree, parseErrs := tmpl.ParseSingleFile(content)
+	if len(parseErrs) > 0 {
+		for _, err := range parseErrs {
+			t.Logf("Parse error: %s", err.GetError())
+		}
+	}
+
+	parsedFiles := map[string]*parser.GroupStatementNode{
+		"test.html": parseTree,
+	}
+
+	// First analysis: no custom functions registered → expect "function undefined"
+	tmpl.SetWorkspaceCustomFunctions(nil)
+	analyzed := tmpl.DefinitionAnalysisWithinWorkspace(parsedFiles)
+
+	foundUndefined := false
+	for _, file := range analyzed {
+		for _, err := range file.Errs {
+			if strings.Contains(err.GetError(), "function undefined") {
+				foundUndefined = true
+			}
+		}
+	}
+	if !foundUndefined {
+		t.Fatal(
+			"expected 'myfunc' to be flagged as 'function undefined' before registration",
+		)
+	}
+
+	// Simulate hot-reload: register "myfunc" as custom function
+	customFuncs := map[string]*tmpl.FunctionDefinition{
+		"myfunc": analyzer.NewCustomFunctionDefinition("myfunc", "funcs.go"),
+	}
+	tmpl.SetWorkspaceCustomFunctions(customFuncs)
+	defer tmpl.SetWorkspaceCustomFunctions(nil)
+
+	// Re-analyze the same template (must create fresh parse tree to reset
+	// analyzer state, same as the real hot-reload path which re-parses all files)
+	parseTree, _ = tmpl.ParseSingleFile(content)
+	parsedFiles["test.html"] = parseTree
+	analyzed = tmpl.DefinitionAnalysisWithinWorkspace(parsedFiles)
+
+	for _, file := range analyzed {
+		for _, err := range file.Errs {
+			if strings.Contains(err.GetError(), "function undefined") {
+				t.Errorf(
+					"after hot-reload, 'myfunc' should not be flagged: %s",
+					err.GetError(),
+				)
+			}
+		}
+	}
+}
+
 func TestBuiltinFunctions(t *testing.T) {
 	// Simple template using builtin functions
 	content := []byte(`{{if and true false}}yes{{end}}`)

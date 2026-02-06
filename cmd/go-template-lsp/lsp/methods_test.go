@@ -131,3 +131,151 @@ func TestProcessFormattingRequest_UsesOpenFilesNotDisk(t *testing.T) {
 		)
 	}
 }
+
+func TestBuildRegisterFileWatcherRequest(t *testing.T) {
+	data := BuildRegisterFileWatcherRequest(42)
+	if data == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	var req RequestMessage[RegistrationParams]
+	if err := json.Unmarshal(data, &req); err != nil {
+		t.Fatal(err)
+	}
+
+	if req.Method != MethodRegisterCapability {
+		t.Errorf("expected method %q, got %q", MethodRegisterCapability, req.Method)
+	}
+	if int(req.Id) != 42 {
+		t.Errorf("expected id 42, got %d", req.Id)
+	}
+	if len(req.Params.Registrations) != 1 {
+		t.Fatalf("expected 1 registration, got %d", len(req.Params.Registrations))
+	}
+
+	reg := req.Params.Registrations[0]
+	if reg.Id != "go-file-watcher" {
+		t.Errorf("expected registration id %q, got %q", "go-file-watcher", reg.Id)
+	}
+	if reg.Method != MethodDidChangeWatchedFiles {
+		t.Errorf("expected method %q, got %q", MethodDidChangeWatchedFiles, reg.Method)
+	}
+
+	// Verify RegisterOptions has the correct structure
+	raw, err := json.Marshal(reg.RegisterOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var opts DidChangeWatchedFilesRegistrationOptions
+	if err := json.Unmarshal(raw, &opts); err != nil {
+		t.Fatal(err)
+	}
+	if len(opts.Watchers) != 1 {
+		t.Fatalf("expected 1 watcher, got %d", len(opts.Watchers))
+	}
+	if opts.Watchers[0].GlobPattern != "**/*.go" {
+		t.Errorf("expected glob %q, got %q", "**/*.go", opts.Watchers[0].GlobPattern)
+	}
+	if opts.Watchers[0].Kind != WatchKindCreate|WatchKindChange|WatchKindDelete {
+		t.Errorf("expected kind %d, got %d",
+			WatchKindCreate|WatchKindChange|WatchKindDelete, opts.Watchers[0].Kind)
+	}
+}
+
+func TestProcessDidChangeWatchedFilesNotification(t *testing.T) {
+	tests := []struct {
+		name     string
+		changes  []FileEvent
+		expected bool
+	}{
+		{
+			name: "regular Go file changed",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/main.go", Type: FileChangeChanged},
+			},
+			expected: true,
+		},
+		{
+			name: "test file changed",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/main_test.go", Type: FileChangeChanged},
+			},
+			expected: false,
+		},
+		{
+			name: "non-Go file changed",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/template.html", Type: FileChangeChanged},
+			},
+			expected: false,
+		},
+		{
+			name: "hidden Go file",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/.hidden.go", Type: FileChangeChanged},
+			},
+			expected: false,
+		},
+		{
+			name: "Go file created",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/new.go", Type: FileChangeCreated},
+			},
+			expected: true,
+		},
+		{
+			name: "Go file deleted",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/old.go", Type: FileChangeDeleted},
+			},
+			expected: true,
+		},
+		{
+			name: "mixed: only test files",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/foo_test.go", Type: FileChangeChanged},
+				{Uri: "file:///workspace/bar_test.go", Type: FileChangeChanged},
+			},
+			expected: false,
+		},
+		{
+			name: "mixed: one regular Go file among test files",
+			changes: []FileEvent{
+				{Uri: "file:///workspace/foo_test.go", Type: FileChangeChanged},
+				{Uri: "file:///workspace/bar.go", Type: FileChangeChanged},
+			},
+			expected: true,
+		},
+		{
+			name:     "empty changes",
+			changes:  []FileEvent{},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			notification := NotificationMessage[DidChangeWatchedFilesParams]{
+				JsonRpc: JSONRPCVersion,
+				Method:  MethodDidChangeWatchedFiles,
+				Params:  DidChangeWatchedFilesParams{Changes: tc.changes},
+			}
+			data, err := json.Marshal(notification)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result := ProcessDidChangeWatchedFilesNotification(data)
+			if result != tc.expected {
+				t.Errorf("expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestProcessDidChangeWatchedFilesNotification_InvalidJSON(t *testing.T) {
+	result := ProcessDidChangeWatchedFilesNotification([]byte(`{invalid json`))
+	if result {
+		t.Error("expected false for invalid JSON")
+	}
+}

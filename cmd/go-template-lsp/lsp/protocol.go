@@ -35,6 +35,26 @@ const (
 	MethodSemanticTokensFull  = "textDocument/semanticTokens/full"
 	MethodSemanticTokensRange = "textDocument/semanticTokens/range"
 	MethodFormatting          = "textDocument/formatting"
+
+	// MethodRegisterCapability is the server-initiated request to register capabilities.
+	MethodRegisterCapability = "client/registerCapability"
+
+	// MethodDidChangeWatchedFiles is the workspace notification for file changes.
+	MethodDidChangeWatchedFiles = "workspace/didChangeWatchedFiles"
+)
+
+// FileChangeType represents how a file was changed.
+const (
+	FileChangeCreated = 1
+	FileChangeChanged = 2
+	FileChangeDeleted = 3
+)
+
+// WatchKind flags for file system watchers.
+const (
+	WatchKindCreate = 1
+	WatchKindChange = 2
+	WatchKindDelete = 4
 )
 
 // Semantic token types (indices into the legend).
