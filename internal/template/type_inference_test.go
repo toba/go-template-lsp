@@ -420,3 +420,60 @@ func TestComparisonTypeInference(t *testing.T) {
 		})
 	}
 }
+
+// =============================================================================
+// Bug fix: map[string]any false positive type errors
+// =============================================================================
+
+// TestMapStringAnyNoFalsePositives verifies that two templates accessing
+// different fields from the same any-typed dot do not produce false
+// "field not found" or "type mismatch" errors when one calls the other.
+func TestMapStringAnyNoFalsePositives(t *testing.T) {
+	tests := []struct {
+		name            string
+		source          string
+		forbiddenErrors []string
+	}{
+		{
+			name: "two templates accessing different fields from any-typed dot",
+			source: `{{define "header"}}{{.Title}}{{end}}
+{{define "page"}}{{.Body}}{{template "header" .}}{{end}}`,
+			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
+		{
+			name: "nested template call with disjoint fields",
+			source: `{{define "sidebar"}}{{.Links}}{{end}}
+{{define "main"}}{{.Content}}{{.Author}}{{template "sidebar" .}}{{end}}`,
+			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root, parseErrs := template.ParseSingleFile([]byte(tt.source))
+			if len(parseErrs) > 0 {
+				t.Fatalf("parse errors: %v", parseErrs)
+			}
+
+			workspace := map[string]*parser.GroupStatementNode{
+				"test.html": root,
+			}
+			results := template.DefinitionAnalysisWithinWorkspace(workspace)
+
+			for _, result := range results {
+				for _, err := range result.Errs {
+					errMsg := err.GetError()
+					for _, forbidden := range tt.forbiddenErrors {
+						if strings.Contains(errMsg, forbidden) {
+							t.Errorf(
+								"unexpected error containing %q: %s",
+								forbidden,
+								errMsg,
+							)
+						}
+					}
+				}
+			}
+		})
+	}
+}

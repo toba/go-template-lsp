@@ -141,10 +141,17 @@ func checkImplicitTypeCompatibility(
 	}
 
 	// 2. Check that every field in constraintTree are also present into candidateTree
+	candidateIsPartial := isPartiallyInferredStruct(candidateTree.fieldType)
 	for childName, childNode := range constraintTree.children {
 		_, ok := candidateTree.children[childName]
 
 		if !ok {
+			// If the candidate is a partially-inferred struct (has any-typed fields),
+			// missing fields are expected — different templates may access different
+			// subsets of a map[string]any's keys. Skip rather than error.
+			if candidateIsPartial {
+				continue
+			}
 			return types.Typ[types.Invalid], fmt.Errorf(
 				"%w, field not found: '%s' of type '%s'",
 				errTypeMismatch,
@@ -156,8 +163,12 @@ func checkImplicitTypeCompatibility(
 
 	// 3. Now go check one level deeper
 	for childName, childNode := range constraintTree.children {
+		candidateChildNode, ok := candidateTree.children[childName]
+		if !ok {
+			// Skipped in step 2 due to partial inference
+			continue
+		}
 		newRootPath := rootPath + "." + childName
-		candidateChildNode := candidateTree.children[childName]
 
 		typ, err := checkImplicitTypeCompatibility(
 			candidateChildNode,
@@ -170,6 +181,22 @@ func checkImplicitTypeCompatibility(
 	}
 
 	return constraintTree.fieldType, nil
+}
+
+// isPartiallyInferredStruct returns true if t is a struct with at least one
+// any-typed field, indicating it was built from partial template usage rather
+// than a concrete Go type definition.
+func isPartiallyInferredStruct(t types.Type) bool {
+	s, ok := t.Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	for field := range s.Fields() {
+		if types.Identical(field.Type(), typeAny.Type()) {
+			return true
+		}
+	}
+	return false
 }
 
 // resolve/obtain, resolveKeyTypeFromInterableType()

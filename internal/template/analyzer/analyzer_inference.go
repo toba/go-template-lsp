@@ -515,6 +515,13 @@ func getRealTypeAssociatedToVariable(
 			continue
 
 		case *types.Map:
+			// Go's text/template supports map key lookup with .FieldName syntax
+			// for maps with string keys.
+			if basic, ok := t.Key().(*types.Basic); ok && basic.Kind() == types.String {
+				parentType = t.Elem()
+				continue
+			}
+
 			err = parser.NewParseError(variable, errMapDontHaveChildren)
 			err.Range.Start.Character = variable.Range.End.Character - fieldPosCountedFromBack
 			err.Range.End.Character = err.Range.Start.Character + len(fieldName)

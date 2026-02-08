@@ -102,8 +102,16 @@ func TestGetTypeOfDollarVariableWithinFile(t *testing.T) {
 			ExpectedTypeString: "map[string]*int",
 		},
 		{
-			Varname:          "varMapStruct.table.ast",
-			ExpectedType:     nil,
+			Varname:            "varMapStruct.table.ast",
+			ExpectedType:       nil,
+			ExpectedTypeString: "*int",
+		},
+		{
+			Varname:      "varMapStringAny.SomeField",
+			ExpectedType: types.Universe.Lookup("any").Type(),
+		},
+		{
+			Varname:          "varMapIntString.SomeField",
 			IsExpectingError: true,
 		},
 		{

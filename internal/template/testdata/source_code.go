@@ -20,6 +20,8 @@ var varInterfaceError error
 var varInterfaceEmbeded EmbededInterface
 var varChannelSimple chan int
 var varAdvancedData *AdvancedData
+var varMapStringAny map[string]any
+var varMapIntString map[int]string
 
 // Iterator types (Go 1.23+)
 var varIterSeq func(yield func(int) bool)                    // iter.Seq[int]
