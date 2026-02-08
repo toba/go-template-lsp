@@ -132,6 +132,69 @@ func TestProcessFormattingRequest_UsesOpenFilesNotDisk(t *testing.T) {
 	}
 }
 
+func TestProcessInitializeRequest_CapabilitiesAreObjects(t *testing.T) {
+	// LSP spec allows ServerCapabilities provider fields to be either a boolean
+	// or an options object, but strict clients (e.g. Zed) only accept the object
+	// form. Verify that provider fields that have an Options type serialize as
+	// JSON objects, not bare booleans.
+	req := RequestMessage[InitializeParams]{
+		JsonRpc: JSONRPCVersion,
+		Id:      1,
+		Method:  MethodInitialize,
+		Params: InitializeParams{
+			RootUri: "file:///workspace",
+		},
+	}
+	data, err := json.Marshal(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, _, _ := ProcessInitializeRequest(data, "test-lsp", "0.0.1")
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(response, &raw); err != nil {
+		t.Fatal(err)
+	}
+
+	var result map[string]json.RawMessage
+	if err := json.Unmarshal(raw["result"], &result); err != nil {
+		t.Fatal(err)
+	}
+
+	var caps map[string]json.RawMessage
+	if err := json.Unmarshal(result["capabilities"], &caps); err != nil {
+		t.Fatal(err)
+	}
+
+	// These capability fields must serialize as objects per the LSP spec's
+	// *Options types. A bare `true`/`false` will cause deserialization
+	// failures in strict clients.
+	objectCapabilities := []string{
+		"documentLinkProvider",
+		"semanticTokensProvider",
+	}
+
+	for _, key := range objectCapabilities {
+		raw, ok := caps[key]
+		if !ok {
+			continue // omitted is fine (omitempty)
+		}
+
+		trimmed := strings.TrimSpace(string(raw))
+		if trimmed == "true" || trimmed == "false" {
+			t.Errorf(
+				"capability %q serialized as boolean %s, expected an object",
+				key,
+				trimmed,
+			)
+		}
+		if trimmed[0] != '{' {
+			t.Errorf("capability %q should be a JSON object, got: %s", key, trimmed)
+		}
+	}
+}
+
 func TestBuildRegisterFileWatcherRequest(t *testing.T) {
 	data := BuildRegisterFileWatcherRequest(42)
 	if data == nil {

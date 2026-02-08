@@ -101,6 +101,11 @@ type SemanticTokensOptions struct {
 	Range  bool                 `json:"range"`
 }
 
+// DocumentLinkOptions describes document link provider capabilities.
+type DocumentLinkOptions struct {
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
+}
+
 // ServerCapabilities describes the capabilities this server supports.
 type ServerCapabilities struct {
 	TextDocumentSync           int                    `json:"textDocumentSync"`
@@ -109,7 +114,7 @@ type ServerCapabilities struct {
 	FoldingRangeProvider       bool                   `json:"foldingRangeProvider"`
 	DocumentHighlightProvider  bool                   `json:"documentHighlightProvider"`
 	DocumentFormattingProvider bool                   `json:"documentFormattingProvider"`
-	DocumentLinkProvider       bool                   `json:"documentLinkProvider"`
+	DocumentLinkProvider       *DocumentLinkOptions   `json:"documentLinkProvider,omitempty"`
 	SemanticTokensProvider     *SemanticTokensOptions `json:"semanticTokensProvider,omitempty"`
 }
 
@@ -257,7 +262,7 @@ func ProcessInitializeRequest(
 				FoldingRangeProvider:       true,
 				DocumentHighlightProvider:  true,
 				DocumentFormattingProvider: true,
-				DocumentLinkProvider:       true,
+				DocumentLinkProvider:       &DocumentLinkOptions{},
 				SemanticTokensProvider: &SemanticTokensOptions{
 					Legend: SemanticTokensLegend{
 						TokenTypes:     SemanticTokenTypes,
