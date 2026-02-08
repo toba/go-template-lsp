@@ -128,7 +128,12 @@ go-template-lsp check ./views
 
 # JSON output
 go-template-lsp check -json ./views
+
+# Declare extra template function names (comma-separated)
+go-template-lsp check -funcs asset,renderPage ./views
 ```
+
+Custom template functions are auto-discovered by scanning Go source files for `template.FuncMap` definitions. The scan starts from the Go module root (`go.mod` directory), so FuncMap definitions anywhere in the module are found even when checking a subdirectory. The `-funcs` flag lets you declare additional function names that can't be auto-discovered (e.g. from external packages or generated code).
 
 **Text output** (default):
 

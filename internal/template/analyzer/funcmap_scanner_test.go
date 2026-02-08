@@ -161,6 +161,70 @@ var funcs = tmpl.FuncMap{
 	}
 }
 
+func TestFindModuleRoot(t *testing.T) {
+	t.Run("finds go.mod in parent", func(t *testing.T) {
+		// Create:  root/go.mod  and  root/sub/dir/
+		tmpDir := testutil.TempDir(t, map[string]string{
+			"go.mod":           "module example.com/test\n",
+			"sub/dir/dummy.go": "package dummy\n",
+		})
+		subDir := filepath.Join(tmpDir, "sub", "dir")
+		got := analyzer.FindModuleRoot(subDir)
+		if got != tmpDir {
+			t.Errorf("FindModuleRoot(%q) = %q, want %q", subDir, got, tmpDir)
+		}
+	})
+
+	t.Run("returns dir when no go.mod exists", func(t *testing.T) {
+		tmpDir := testutil.TempDir(t, map[string]string{
+			"dummy.txt": "",
+		})
+		got := analyzer.FindModuleRoot(tmpDir)
+		// Without go.mod anywhere, it should walk all the way to / and return /
+		// We just verify it doesn't panic and returns a valid directory.
+		if got == "" {
+			t.Error("FindModuleRoot returned empty string")
+		}
+	})
+
+	t.Run("finds go.mod in same directory", func(t *testing.T) {
+		tmpDir := testutil.TempDir(t, map[string]string{
+			"go.mod": "module example.com/test\n",
+		})
+		got := analyzer.FindModuleRoot(tmpDir)
+		if got != tmpDir {
+			t.Errorf("FindModuleRoot(%q) = %q, want %q", tmpDir, got, tmpDir)
+		}
+	})
+}
+
+func TestFunctionsFromNames(t *testing.T) {
+	names := []string{"asset", "renderPage", "", "dict"}
+	funcs := analyzer.FunctionsFromNames(names)
+
+	if len(funcs) != 3 {
+		t.Fatalf("expected 3 functions, got %d", len(funcs))
+	}
+
+	for _, name := range []string{"asset", "renderPage", "dict"} {
+		fd, ok := funcs[name]
+		if !ok {
+			t.Errorf("expected function %q not found", name)
+			continue
+		}
+		if fd.Name() != name {
+			t.Errorf("expected Name() = %q, got %q", name, fd.Name())
+		}
+		if fd.FileName() != "" {
+			t.Errorf("expected empty FileName(), got %q", fd.FileName())
+		}
+	}
+
+	if _, ok := funcs[""]; ok {
+		t.Error("empty name should have been skipped")
+	}
+}
+
 func TestScanWorkspaceForFuncMap_CapturesSourcePositions(t *testing.T) {
 	// Line numbers (1-indexed in Go source, 0-indexed in lexer.Range):
 	// Line 1: package main

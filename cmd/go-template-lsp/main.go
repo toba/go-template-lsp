@@ -74,8 +74,17 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "check" {
 		checkFlags := flag.NewFlagSet("check", flag.ExitOnError)
 		jsonFlag := checkFlags.Bool("json", false, "output as JSON")
+		funcsFlag := checkFlags.String(
+			"funcs",
+			"",
+			"comma-separated list of additional template function names",
+		)
 		_ = checkFlags.Parse(os.Args[2:])
-		os.Exit(runCheck(checkFlags.Args(), *jsonFlag))
+		var extraFuncs []string
+		if *funcsFlag != "" {
+			extraFuncs = strings.Split(*funcsFlag, ",")
+		}
+		os.Exit(runCheck(checkFlags.Args(), *jsonFlag, extraFuncs))
 	}
 
 	versionFlag := flag.Bool("version", false, "print the LSP version")

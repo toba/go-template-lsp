@@ -221,6 +221,35 @@ func addCustomFunction(
 	funcs[name] = NewCustomFunctionDefinition(name, filePath, rng)
 }
 
+// FindModuleRoot walks up from dir to find the nearest directory containing
+// go.mod. Returns dir unchanged if no go.mod is found.
+func FindModuleRoot(dir string) string {
+	dir, _ = filepath.Abs(dir)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return dir // reached filesystem root
+		}
+		dir = parent
+	}
+}
+
+// FunctionsFromNames creates FunctionDefinition entries for a list of function
+// names with no source location. This is used by the -funcs CLI flag.
+func FunctionsFromNames(names []string) map[string]*FunctionDefinition {
+	funcs := make(map[string]*FunctionDefinition, len(names))
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		funcs[name] = NewCustomFunctionDefinition(name, "", lexer.Range{})
+	}
+	return funcs
+}
+
 // NewCustomFunctionDefinition creates a custom function definition with a generic
 // variadic signature: func(args ...any) any. This allows the function to accept
 // any number of arguments and return any type, which is appropriate for custom

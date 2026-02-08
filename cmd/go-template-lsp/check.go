@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -25,7 +26,7 @@ type checkDiagnostic struct {
 
 // runCheck runs the diagnostic pipeline on the given directory and outputs results.
 // Returns exit code: 0 = clean, 1 = errors found, 2 = tool failure.
-func runCheck(args []string, jsonOutput bool) (exitCode int) {
+func runCheck(args []string, jsonOutput bool, extraFuncs []string) (exitCode int) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Fprintf(os.Stderr, "go-template-lsp check: internal error: %v\n", r)
@@ -55,7 +56,15 @@ func runCheck(args []string, jsonOutput bool) (exitCode int) {
 	}
 
 	// Discover custom template functions from Go source files.
-	customFuncs, _ := analyzer.ScanWorkspaceForFuncMap(absDir)
+	// Scan from the Go module root so FuncMaps defined outside the template
+	// directory are discovered.
+	customFuncs, _ := analyzer.ScanWorkspaceForFuncMap(analyzer.FindModuleRoot(absDir))
+	if len(extraFuncs) > 0 {
+		if customFuncs == nil {
+			customFuncs = make(map[string]*analyzer.FunctionDefinition)
+		}
+		maps.Copy(customFuncs, analyzer.FunctionsFromNames(extraFuncs))
+	}
 	if len(customFuncs) > 0 {
 		tmpl.SetWorkspaceCustomFunctions(customFuncs)
 	}

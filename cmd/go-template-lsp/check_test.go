@@ -11,7 +11,7 @@ import (
 
 func TestRunCheck_ValidDir(t *testing.T) {
 	dir := filepath.Join("testdata", "check", "valid")
-	code := runCheck([]string{dir}, false)
+	code := runCheck([]string{dir}, false, nil)
 	if code != 0 {
 		t.Errorf("expected exit code 0 for valid templates, got %d", code)
 	}
@@ -19,7 +19,7 @@ func TestRunCheck_ValidDir(t *testing.T) {
 
 func TestRunCheck_ErrorsDir(t *testing.T) {
 	dir := filepath.Join("testdata", "check", "errors")
-	code := runCheck([]string{dir}, false)
+	code := runCheck([]string{dir}, false, nil)
 	if code != 1 {
 		t.Errorf("expected exit code 1 for templates with errors, got %d", code)
 	}
@@ -33,7 +33,7 @@ func TestRunCheck_ErrorsTextOutput(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	code := runCheck([]string{dir}, false)
+	code := runCheck([]string{dir}, false, nil)
 
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestRunCheck_ErrorsJSONOutput(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	code := runCheck([]string{dir}, true)
+	code := runCheck([]string{dir}, true, nil)
 
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
@@ -107,7 +107,7 @@ func TestRunCheck_NonexistentDir(t *testing.T) {
 	_, w, _ := os.Pipe()
 	os.Stderr = w
 
-	code := runCheck([]string{"/nonexistent/path/that/does/not/exist"}, false)
+	code := runCheck([]string{"/nonexistent/path/that/does/not/exist"}, false, nil)
 
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
@@ -121,7 +121,7 @@ func TestRunCheck_NonexistentDir(t *testing.T) {
 
 func TestRunCheck_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
-	code := runCheck([]string{dir}, false)
+	code := runCheck([]string{dir}, false, nil)
 	if code != 0 {
 		t.Errorf("expected exit code 0 for empty directory, got %d", code)
 	}
@@ -134,7 +134,7 @@ func TestRunCheck_EmptyDirJSON(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	code := runCheck([]string{dir}, true)
+	code := runCheck([]string{dir}, true, nil)
 
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
@@ -157,7 +157,7 @@ func TestRunCheck_EmptyDirJSON(t *testing.T) {
 
 func TestRunCheck_DefaultDir(t *testing.T) {
 	// With no args, runCheck should use the current directory and not crash.
-	code := runCheck(nil, false)
+	code := runCheck(nil, false, nil)
 	// The exit code depends on whether the CWD has templates with errors,
 	// but it should not be 2 (tool failure).
 	if code == 2 {
