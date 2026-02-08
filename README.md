@@ -4,13 +4,16 @@ A Language Server Protocol (LSP) implementation for Go templates (`text/template
 
 ## Features
 
-- **Diagnostics**: Real-time syntax error detection as you type
+- **Diagnostics**: Real-time syntax error detection and semantic analysis (undefined variables, missing fields, unknown functions)
 - **Hover**: Type information and documentation on hover over template variables and functions
 - **Go to Definition**: Navigate to template definitions (`{{define "name"}}`)
 - **Formatting**: Re-indent based on HTML and template nesting, with optional attribute wrapping
 - **Folding Ranges**: Collapse template blocks (`{{if}}...{{end}}`, `{{range}}...{{end}}`) and comments
-- **Semantic Tokens**: Enhanced syntax highlighting
-- **Document Highlight**: Highlight matching template keywords
+- **Semantic Tokens**: Enhanced syntax highlighting for keywords, variables, functions, strings, numbers, and operators
+- **Document Highlight**: Highlight matching template keywords (e.g. click `{{if}}` to highlight its `{{else}}` and `{{end}}`)
+- **Document Links**: Clickable links in template documents
+- **Custom Function Discovery**: Automatically scans Go source files for `template.FuncMap` definitions so custom functions are recognized
+- **CLI Linting**: `check` subcommand for CI/CD and command-line diagnostics
 
 ## Installation
 
@@ -111,6 +114,50 @@ When an HTML opening tag exceeds a configured line width, the formatter can wrap
 ```
 
 Continuation lines are indented one level deeper than the tag. Multi-line tags already in the source are joined back into a single line before re-wrapping.
+
+## CLI Linting (`check`)
+
+The `check` subcommand runs the same diagnostic pipeline as the LSP server and prints errors to stdout. This is useful for CI/CD pipelines, pre-commit hooks, and AI agents.
+
+```bash
+# Check the current directory
+go-template-lsp check
+
+# Check a specific directory
+go-template-lsp check ./views
+
+# JSON output
+go-template-lsp check -json ./views
+```
+
+**Text output** (default):
+
+```
+views/user.html:8:22: missing matching '{{ end }}' statement
+```
+
+**JSON output** (`-json`):
+
+```json
+[
+  {
+    "file": "views/user.html",
+    "line": 8,
+    "column": 22,
+    "endLine": 8,
+    "endColumn": 24,
+    "message": "missing matching '{{ end }}' statement"
+  }
+]
+```
+
+**Exit codes:**
+
+| Code | Meaning |
+|------|---------|
+| `0` | No errors found |
+| `1` | Template errors found |
+| `2` | Tool failure (e.g. directory not found) |
 
 ## Supported File Extensions
 
