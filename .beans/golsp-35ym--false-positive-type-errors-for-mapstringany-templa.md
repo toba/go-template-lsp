@@ -5,7 +5,7 @@ status: completed
 type: bug
 priority: normal
 created_at: 2026-02-08T17:58:40Z
-updated_at: 2026-02-08T18:51:40Z
+updated_at: 2026-02-08T21:35:08Z
 ---
 
 ## Problem
@@ -98,19 +98,15 @@ The linter partially infers struct types from template usage but misses fields:
 | \`calendar-grid.gohtml:25\` | \`$unit.ID\` | \`GridUnit.ID\` exists (int64) |
 | \`calendar.gohtml:52\` | \`$.Grid.Dates\` | \`GridData.Dates\` exists (\`[]DateHeader\`) |
 
-### Category 3: "expected 'string' but got 'invalid type'" for struct fields through map indirection (7 errors)
+### ~~Category 3: "expected 'string' but got 'invalid type'" for struct fields through map indirection~~ ✅ FIXED
 
-The linter loses type info when a struct is stored in \`map[string]any\` and then accessed via \`$u := .Units\`:
+Fixed in v0.12.2. These 7 errors no longer appear:
 
-| File | Expression | Reality |
-|------|-----------|---------|
-| \`units.gohtml:29\` | \`eq $u.View "table"\` | \`$u\` is \`unitsPageData\`, \`.View\` is \`string\` |
-| \`units.gohtml:35\` | \`eq $u.View "map"\` | same |
-| \`units.gohtml:71\` | \`eq (printf "%d" .) $u.FilterBedrooms\` | \`.FilterBedrooms\` is \`string\` |
-| \`units.gohtml:85\` | \`eq $u.FilterConfidence "low"\` | \`.FilterConfidence\` is \`string\` |
-| \`units.gohtml:86\` | \`eq $u.FilterConfidence "medium"\` | same |
-| \`units.gohtml:87\` | \`eq $u.FilterConfidence "high"\` | same |
-| \`units.gohtml:102\` | \`eq $u.View "map"\` | same as line 29 |
+| ~~\`units.gohtml:29\`~~ | ~~\`eq $u.View "table"\`~~ | ~~expected 'string' but got 'invalid type'~~ |
+| ~~\`units.gohtml:35\`~~ | ~~\`eq $u.View "map"\`~~ | ~~same~~ |
+| ~~\`units.gohtml:71\`~~ | ~~\`eq (printf "%d" .) $u.FilterBedrooms\`~~ | ~~same~~ |
+| ~~\`units.gohtml:85-87\`~~ | ~~\`eq $u.FilterConfidence "low/medium/high"\`~~ | ~~same~~ |
+| ~~\`units.gohtml:102\`~~ | ~~\`eq $u.View "map"\`~~ | ~~same~~ |
 
 ## Possible solutions
 
@@ -122,8 +118,9 @@ The linter loses type info when a struct is stored in \`map[string]any\` and the
 ## Progress
 
 - v0.12.1: Fixed Category 1 (map field access + cross-template partial struct compat). Error count: **27 → 17**.
-- v0.12.2: Fixed Categories 1b, 2, and 3 (dollar variable inference fallback + recheck skip for defeated inference). Error count: **17 → 0** (all false positives eliminated).
+- v0.12.2: Fixed Category 3 (struct fields through map indirection). Error count: **17 → 10**.
+- Categories 1b and 2 remain: **10 false positives** (2 sub-template field-not-found + 8 nested struct field-not-found).
 
 ## Impact
 
-All 27 false positive errors from \`map[string]any\` template data have been resolved. The \`check\` subcommand should now be usable in CI for projects using this pattern.
+10 false positives remain — all in categories 1b (sub-template data passing) and 2 (nested struct fields in `range` loops). CI adoption still blocked.

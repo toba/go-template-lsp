@@ -1,7 +1,7 @@
 ---
 # golsp-34xz
 title: Support custom FuncMap declarations for check/diagnostics
-status: in-progress
+status: completed
 type: feature
 priority: normal
 created_at: 2026-02-08T17:19:41Z
@@ -51,8 +51,8 @@ There's a secondary class of false positives from type inference on range variab
 
 ## Breakdown
 
-- [ ] Design config file format and loading (project root discovery, file format)
-- [ ] Parse config and register declared functions as known during analysis
-- [ ] Optional: auto-discover FuncMap from Go source files
-- [ ] Add `-funcs` flag to `check` subcommand as alternative to config file
-- [ ] Update README with config documentation
+- [x] Auto-discover FuncMap from Go source files (scans from module root)
+- [x] Add `-funcs` flag to `check` subcommand for additional functions
+- [x] LSP hot-reload: re-scans when Go files change
+- [x] Go-to-definition support for custom functions
+- [x] Update README with documentation

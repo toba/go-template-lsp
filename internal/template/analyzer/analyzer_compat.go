@@ -142,14 +142,15 @@ func checkImplicitTypeCompatibility(
 
 	// 2. Check that every field in constraintTree are also present into candidateTree
 	candidateIsPartial := isPartiallyInferredStruct(candidateTree.fieldType)
+	constraintIsPartial := isPartiallyInferredStruct(constraintTree.fieldType)
 	for childName, childNode := range constraintTree.children {
 		_, ok := candidateTree.children[childName]
 
 		if !ok {
-			// If the candidate is a partially-inferred struct (has any-typed fields),
+			// If either side is a partially-inferred struct (has any-typed fields),
 			// missing fields are expected — different templates may access different
 			// subsets of a map[string]any's keys. Skip rather than error.
-			if candidateIsPartial {
+			if candidateIsPartial || constraintIsPartial {
 				continue
 			}
 			return types.Typ[types.Invalid], fmt.Errorf(

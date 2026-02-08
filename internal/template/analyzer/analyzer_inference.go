@@ -522,6 +522,13 @@ func getRealTypeAssociatedToVariable(
 				continue
 			}
 
+			// When inference produces map[any]any (key is empty interface), field access
+			// should also be allowed since the key may be string at runtime.
+			if iface, ok := t.Key().Underlying().(*types.Interface); ok && iface.Empty() {
+				parentType = t.Elem()
+				continue
+			}
+
 			err = parser.NewParseError(variable, errMapDontHaveChildren)
 			err.Range.Start.Character = variable.Range.End.Character - fieldPosCountedFromBack
 			err.Range.End.Character = err.Range.Start.Character + len(fieldName)

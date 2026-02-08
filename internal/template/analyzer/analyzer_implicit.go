@@ -170,16 +170,34 @@ func buildTypeFromTreeOfType(tree *nodeImplicitType) types.Type {
 	}
 
 	varFields := make([]*types.Var, 0, len(tree.children))
+	hasNonDiscard := false
 
 	for _, node := range tree.children {
 		if node.toDiscard {
 			continue
 		}
 
+		hasNonDiscard = true
 		fieldType := buildTypeFromTreeOfType(node)
 		field := types.NewVar(token.NoPos, nil, node.fieldName, fieldType)
 
 		varFields = append(varFields, field)
+	}
+
+	// When there is a mix of concrete (non-toDiscard) and toDiscard children,
+	// include the toDiscard ones as any-typed fields. This ensures the resulting
+	// struct is recognized as partially inferred by isPartiallyInferredStruct,
+	// preventing false "field not found" errors when different templates access
+	// different subsets of an inferred type's fields.
+	if hasNonDiscard {
+		for _, node := range tree.children {
+			if !node.toDiscard {
+				continue
+			}
+
+			field := types.NewVar(token.NoPos, nil, node.fieldName, typeAny.Type())
+			varFields = append(varFields, field)
+		}
 	}
 
 	finalType := tree.fieldType

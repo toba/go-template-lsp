@@ -484,6 +484,56 @@ func TestMapStringAnyNoFalsePositives(t *testing.T) {
 				"type mismatch",
 			},
 		},
+		// Category 1b: Caller has all-concrete inferred fields (e.g., eq .Page "login"
+		// constrains Page to string), then calls sub-template that accesses different fields.
+		// The caller's struct has no any-typed fields, so isPartiallyInferredStruct returns
+		// false, causing "field not found" in the sub-template.
+		{
+			name: "caller with concrete-inferred fields calls sub-template accessing different fields",
+			source: `{{define "flash"}}{{.Message}}{{.AllowedDomains}}{{end}}
+{{define "login"}}{{if eq .Page "login"}}Login{{end}}{{template "flash" .}}{{end}}`,
+			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
+		// Category 2: Range over inferred field where one child is constrained to
+		// a concrete type (via eq) and others are plain output. The toDiscard nodes
+		// get dropped, producing an all-concrete struct that isn't recognized as partial.
+		{
+			name: "range with dollar variable where eq constrains one field among many",
+			source: `{{define "grid"}}
+{{range $i, $unit := .Units}}
+{{if eq $unit.View "table"}}Table{{end}}
+{{$unit.Name}} {{$unit.City}}
+{{end}}
+{{end}}`,
+			forbiddenErrors: []string{
+				"field not found",
+				"field or method not found",
+				"type mismatch",
+			},
+		},
+		{
+			name: "range with dot where eq constrains one field among plain outputs",
+			source: `{{define "grid"}}
+{{range .Units}}
+{{if eq .View "table"}}Table{{end}}
+{{.Name}} {{.City}}
+{{end}}
+{{end}}`,
+			forbiddenErrors: []string{
+				"field not found",
+				"field or method not found",
+				"type mismatch",
+			},
+		},
+		// Category 2b: Caller has all-concrete inferred fields from eq comparisons,
+		// then calls sub-template that accesses different fields. Similar to 1b but
+		// the constraint side (sub-template) has mixed concrete and any-typed fields.
+		{
+			name: "caller with eq constraints calls sub-template with mixed fields",
+			source: `{{define "sub"}}{{.Name}}{{.City}}{{end}}
+{{define "main"}}{{if eq .View "table"}}Table{{end}}{{template "sub" .}}{{end}}`,
+			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
 		// Category 3: Dollar variable assigned from any-typed field, field access in eq comparison
 		{
 			name: "dollar variable from any field used in eq comparison",
