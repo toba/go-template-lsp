@@ -6,6 +6,7 @@ import (
 
 	tmpl "github.com/toba/go-template-lsp/internal/template"
 	"github.com/toba/go-template-lsp/internal/template/analyzer"
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
 )
 
@@ -36,33 +37,69 @@ func TestCustomFunctionsEqual(t *testing.T) {
 		{
 			name: "same keys",
 			a: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
-				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"a.go",
+					lexer.Range{},
+				),
+				"upper": analyzer.NewCustomFunctionDefinition(
+					"upper",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			b: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "b.go"),
-				"upper": analyzer.NewCustomFunctionDefinition("upper", "b.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"b.go",
+					lexer.Range{},
+				),
+				"upper": analyzer.NewCustomFunctionDefinition(
+					"upper",
+					"b.go",
+					lexer.Range{},
+				),
 			},
 			expected: true,
 		},
 		{
 			name: "different lengths",
 			a: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			b: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
-				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"a.go",
+					lexer.Range{},
+				),
+				"upper": analyzer.NewCustomFunctionDefinition(
+					"upper",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			expected: false,
 		},
 		{
 			name: "different keys",
 			a: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			b: map[string]*tmpl.FunctionDefinition{
-				"upper": analyzer.NewCustomFunctionDefinition("upper", "a.go"),
+				"upper": analyzer.NewCustomFunctionDefinition(
+					"upper",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			expected: false,
 		},
@@ -70,7 +107,11 @@ func TestCustomFunctionsEqual(t *testing.T) {
 			name: "one nil one populated",
 			a:    nil,
 			b: map[string]*tmpl.FunctionDefinition{
-				"lower": analyzer.NewCustomFunctionDefinition("lower", "a.go"),
+				"lower": analyzer.NewCustomFunctionDefinition(
+					"lower",
+					"a.go",
+					lexer.Range{},
+				),
 			},
 			expected: false,
 		},
@@ -124,7 +165,11 @@ func TestHotReloadCustomFunctions(t *testing.T) {
 
 	// Simulate hot-reload: register "myfunc" as custom function
 	customFuncs := map[string]*tmpl.FunctionDefinition{
-		"myfunc": analyzer.NewCustomFunctionDefinition("myfunc", "funcs.go"),
+		"myfunc": analyzer.NewCustomFunctionDefinition(
+			"myfunc",
+			"funcs.go",
+			lexer.Range{},
+		),
 	}
 	tmpl.SetWorkspaceCustomFunctions(customFuncs)
 	defer tmpl.SetWorkspaceCustomFunctions(nil)
@@ -348,10 +393,15 @@ func TestCustomFunctionFromFuncMap(t *testing.T) {
 
 	// Create a custom function definition with variadic signature
 	// This simulates what ScanWorkspaceForFuncMap would discover
-	customFuncs["timehtml"] = analyzer.NewCustomFunctionDefinition("timehtml", "test.go")
+	customFuncs["timehtml"] = analyzer.NewCustomFunctionDefinition(
+		"timehtml",
+		"test.go",
+		lexer.Range{},
+	)
 	customFuncs["formatDate"] = analyzer.NewCustomFunctionDefinition(
 		"formatDate",
 		"test.go",
+		lexer.Range{},
 	)
 
 	tmpl.SetWorkspaceCustomFunctions(customFuncs)
@@ -452,7 +502,11 @@ func TestMethodCallWithArguments(t *testing.T) {
 func TestCustomFunctionWithVariousArgCounts(t *testing.T) {
 	// Register a variadic custom function
 	customFuncs := map[string]*tmpl.FunctionDefinition{
-		"myFunc": analyzer.NewCustomFunctionDefinition("myFunc", "test.go"),
+		"myFunc": analyzer.NewCustomFunctionDefinition(
+			"myFunc",
+			"test.go",
+			lexer.Range{},
+		),
 	}
 	tmpl.SetWorkspaceCustomFunctions(customFuncs)
 	defer tmpl.SetWorkspaceCustomFunctions(nil)
@@ -493,7 +547,11 @@ func TestCustomFunctionWithVariousArgCounts(t *testing.T) {
 // TestDebugTimehtmlVariants tests different variations to isolate the issue
 func TestDebugTimehtmlVariants(t *testing.T) {
 	customFuncs := map[string]*tmpl.FunctionDefinition{
-		"timehtml": analyzer.NewCustomFunctionDefinition("timehtml", "templates.go"),
+		"timehtml": analyzer.NewCustomFunctionDefinition(
+			"timehtml",
+			"templates.go",
+			lexer.Range{},
+		),
 	}
 	tmpl.SetWorkspaceCustomFunctions(customFuncs)
 	defer tmpl.SetWorkspaceCustomFunctions(nil)
@@ -530,9 +588,21 @@ func TestDebugTimehtmlVariants(t *testing.T) {
 func TestRealWorldTemplatePatterns(t *testing.T) {
 	// Register custom functions similar to core/web
 	customFuncs := map[string]*tmpl.FunctionDefinition{
-		"timehtml": analyzer.NewCustomFunctionDefinition("timehtml", "templates.go"),
-		"lower":    analyzer.NewCustomFunctionDefinition("lower", "templates.go"),
-		"upper":    analyzer.NewCustomFunctionDefinition("upper", "templates.go"),
+		"timehtml": analyzer.NewCustomFunctionDefinition(
+			"timehtml",
+			"templates.go",
+			lexer.Range{},
+		),
+		"lower": analyzer.NewCustomFunctionDefinition(
+			"lower",
+			"templates.go",
+			lexer.Range{},
+		),
+		"upper": analyzer.NewCustomFunctionDefinition(
+			"upper",
+			"templates.go",
+			lexer.Range{},
+		),
 	}
 	tmpl.SetWorkspaceCustomFunctions(customFuncs)
 	defer tmpl.SetWorkspaceCustomFunctions(nil)

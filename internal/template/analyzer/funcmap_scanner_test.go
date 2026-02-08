@@ -1,6 +1,7 @@
 package analyzer_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/toba/go-template-lsp/internal/template/analyzer"
@@ -157,5 +158,102 @@ var funcs = tmpl.FuncMap{
 
 	if _, ok := funcs["aliased"]; !ok {
 		t.Error("aliased import function should have been found")
+	}
+}
+
+func TestScanWorkspaceForFuncMap_CapturesSourcePositions(t *testing.T) {
+	// Line numbers (1-indexed in Go source, 0-indexed in lexer.Range):
+	// Line 1: package main
+	// Line 2: (blank)
+	// Line 3: import (
+	// Line 4:     "text/template"
+	// Line 5: )
+	// Line 6: (blank)
+	// Line 7: var funcs = template.FuncMap{
+	// Line 8:     "alpha": func() {},
+	// Line 9:     "beta":  func() {},
+	// Line 10: }
+	testFile := `package main
+
+import (
+	"text/template"
+)
+
+var funcs = template.FuncMap{
+	"alpha": func() {},
+	"beta":  func() {},
+}
+`
+	tmpDir := testutil.TempDir(t, map[string]string{
+		"funcs.go": testFile,
+	})
+
+	funcs, err := analyzer.ScanWorkspaceForFuncMap(tmpDir)
+	if err != nil {
+		t.Fatalf("ScanWorkspaceForFuncMap failed: %v", err)
+	}
+
+	expectedFilePath := filepath.Join(tmpDir, "funcs.go")
+
+	tests := []struct {
+		name      string
+		startLine int
+		startChar int
+		endChar   int
+	}{
+		// "alpha" is on line 8 (0-indexed: 7), tab-indented, starts at column 2 (after opening quote)
+		{"alpha", 7, 2, 7},
+		// "beta" is on line 9 (0-indexed: 8)
+		{"beta", 8, 2, 6},
+	}
+
+	for _, tc := range tests {
+		fn, ok := funcs[tc.name]
+		if !ok {
+			t.Errorf("expected function %q not found", tc.name)
+			continue
+		}
+
+		rng := fn.Range()
+		if rng.IsEmpty() {
+			t.Errorf("function %q has empty range", tc.name)
+			continue
+		}
+
+		if fn.FileName() != expectedFilePath {
+			t.Errorf(
+				"function %q: expected file %q, got %q",
+				tc.name,
+				expectedFilePath,
+				fn.FileName(),
+			)
+		}
+
+		if rng.Start.Line != tc.startLine {
+			t.Errorf(
+				"function %q: expected start line %d, got %d",
+				tc.name,
+				tc.startLine,
+				rng.Start.Line,
+			)
+		}
+
+		if rng.Start.Character != tc.startChar {
+			t.Errorf(
+				"function %q: expected start char %d, got %d",
+				tc.name,
+				tc.startChar,
+				rng.Start.Character,
+			)
+		}
+
+		if rng.End.Character != tc.endChar {
+			t.Errorf(
+				"function %q: expected end char %d, got %d",
+				tc.name,
+				tc.endChar,
+				rng.End.Character,
+			)
+		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/toba/go-template-lsp/internal/template"
+	"github.com/toba/go-template-lsp/internal/template/analyzer"
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
 )
@@ -846,5 +847,98 @@ func TestHover_KeywordsReturnEmpty(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestGoToDefinition_CustomFunction(t *testing.T) {
+	// Register a custom function with a known source position
+	goFile := "/path/to/templates.go"
+	sourceRange := lexer.Range{
+		Start: lexer.Position{Line: 212, Character: 2},
+		End:   lexer.Position{Line: 212, Character: 10},
+	}
+	customFuncs := map[string]*template.FunctionDefinition{
+		"timehtml": analyzer.NewCustomFunctionDefinition("timehtml", goFile, sourceRange),
+	}
+	template.SetWorkspaceCustomFunctions(customFuncs)
+	defer template.SetWorkspaceCustomFunctions(nil)
+
+	// Template that uses the custom function
+	// "timehtml" starts at character 3 (after "{{")
+	source := []byte(`{{timehtml .StartedAt}}`)
+
+	root, parseErrs := template.ParseSingleFile(source)
+	if len(parseErrs) != 0 {
+		t.Fatalf("Parse errors: %v", parseErrs)
+	}
+
+	workspace := map[string]*parser.GroupStatementNode{
+		"test.html": root,
+	}
+
+	file, _ := template.DefinitionAnalysisSingleFile("test.html", workspace)
+	if file == nil {
+		t.Fatal("Expected non-nil file definition")
+	}
+
+	// Position the cursor on "timehtml" (line 0, character 3)
+	pos := lexer.Position{Line: 0, Character: 3}
+	fileNames, ranges, err := template.GoToDefinition(file, pos)
+	if err != nil {
+		t.Fatalf("GoToDefinition failed: %v", err)
+	}
+
+	if len(fileNames) != 1 {
+		t.Fatalf("Expected 1 definition, got %d", len(fileNames))
+	}
+
+	// Should navigate to the Go source file, not the template file
+	if fileNames[0] != goFile {
+		t.Errorf("Expected file %q, got %q", goFile, fileNames[0])
+	}
+
+	// Should use the Go source range, not the template token range
+	if ranges[0] != sourceRange {
+		t.Errorf("Expected range %v, got %v", sourceRange, ranges[0])
+	}
+}
+
+func TestGoToDefinition_BuiltinFunction(t *testing.T) {
+	// Builtin functions have empty ranges and should still work via the cursorDef path
+	source := []byte(`{{len .Items}}`)
+
+	root, parseErrs := template.ParseSingleFile(source)
+	if len(parseErrs) != 0 {
+		t.Fatalf("Parse errors: %v", parseErrs)
+	}
+
+	workspace := map[string]*parser.GroupStatementNode{
+		"test.html": root,
+	}
+
+	file, _ := template.DefinitionAnalysisSingleFile("test.html", workspace)
+	if file == nil {
+		t.Fatal("Expected non-nil file definition")
+	}
+
+	// Position the cursor on "len" (line 0, character 3)
+	pos := lexer.Position{Line: 0, Character: 3}
+	fileNames, ranges, err := template.GoToDefinition(file, pos)
+	if err != nil {
+		t.Fatalf("GoToDefinition failed: %v", err)
+	}
+
+	if len(fileNames) != 1 {
+		t.Fatalf("Expected 1 definition, got %d", len(fileNames))
+	}
+
+	// Builtin functions have fileName "builtin" and use the template token range
+	if fileNames[0] != "builtin" {
+		t.Errorf("Expected file %q, got %q", "builtin", fileNames[0])
+	}
+
+	// Builtin functions should have the template token range (not empty)
+	if ranges[0].IsEmpty() {
+		t.Error("Expected non-empty range for builtin function")
 	}
 }

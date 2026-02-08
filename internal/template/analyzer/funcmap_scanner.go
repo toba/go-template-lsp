@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
 
 // ScanWorkspaceForFuncMap finds all template.FuncMap definitions in Go files
@@ -80,7 +82,7 @@ func scanFileForFuncMap(filePath string) (map[string]*FunctionDefinition, error)
 		case *ast.CompositeLit:
 			// Pattern 1: template.FuncMap{ "name": func... }
 			if isFuncMapType(node.Type, templateImportAlias) {
-				extractFuncMapKeys(node, customFunctions, filePath)
+				extractFuncMapKeys(node, customFunctions, filePath, fset)
 			}
 
 		case *ast.AssignStmt:
@@ -96,7 +98,8 @@ func scanFileForFuncMap(filePath string) (map[string]*FunctionDefinition, error)
 						if i < len(node.Rhs) {
 							// Check if rhs is a function
 							if isFunctionValue(node.Rhs[i]) {
-								addCustomFunction(customFunctions, key, filePath)
+								rng := goPositionToRange(fset, indexExpr.Index.Pos(), key)
+								addCustomFunction(customFunctions, key, filePath, rng)
 							}
 						}
 					}
@@ -155,11 +158,13 @@ func extractFuncMapKeys(
 	lit *ast.CompositeLit,
 	funcs map[string]*FunctionDefinition,
 	filePath string,
+	fset *token.FileSet,
 ) {
 	for _, elt := range lit.Elts {
 		if kv, ok := elt.(*ast.KeyValueExpr); ok {
 			if key := extractStringLiteral(kv.Key); key != "" {
-				addCustomFunction(funcs, key, filePath)
+				rng := goPositionToRange(fset, kv.Key.Pos(), key)
+				addCustomFunction(funcs, key, filePath, rng)
 			}
 		}
 	}
@@ -190,20 +195,40 @@ func isFunctionValue(expr ast.Expr) bool {
 	return false
 }
 
+// goPositionToRange converts a Go token.Pos for a string literal key to a lexer.Range.
+// The pos points to the opening quote of the string literal. Go lines are 1-indexed;
+// LSP/lexer positions are 0-indexed.
+func goPositionToRange(fset *token.FileSet, pos token.Pos, key string) lexer.Range {
+	p := fset.Position(pos)
+	// p.Line is 1-indexed, p.Column is 1-indexed
+	// The pos points to the opening quote; the key is inside the quotes
+	startLine := p.Line - 1
+	startChar := p.Column - 1 + 1 // skip opening quote
+	endChar := startChar + len(key)
+	return lexer.Range{
+		Start: lexer.Position{Line: startLine, Character: startChar},
+		End:   lexer.Position{Line: startLine, Character: endChar},
+	}
+}
+
 // addCustomFunction adds a custom function definition with a generic signature.
 func addCustomFunction(
 	funcs map[string]*FunctionDefinition,
 	name string,
 	filePath string,
+	rng lexer.Range,
 ) {
-	funcs[name] = NewCustomFunctionDefinition(name, filePath)
+	funcs[name] = NewCustomFunctionDefinition(name, filePath, rng)
 }
 
 // NewCustomFunctionDefinition creates a custom function definition with a generic
 // variadic signature: func(args ...any) any. This allows the function to accept
 // any number of arguments and return any type, which is appropriate for custom
 // template functions whose exact signatures are not known at analysis time.
-func NewCustomFunctionDefinition(name, filePath string) *FunctionDefinition {
+func NewCustomFunctionDefinition(
+	name, filePath string,
+	rng lexer.Range,
+) *FunctionDefinition {
 	// Create a generic variadic signature: func(args ...any) any
 	// This allows any number of arguments and any return type
 	anyType := typeAny.Type()
@@ -216,6 +241,7 @@ func NewCustomFunctionDefinition(name, filePath string) *FunctionDefinition {
 		name:     name,
 		fileName: filePath,
 		typ:      sig,
+		rng:      rng,
 		node:     nil,
 	}
 }

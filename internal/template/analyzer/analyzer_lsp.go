@@ -109,6 +109,13 @@ func FindSourceDefinitionFromPosition(
 		}
 
 		if len(fields) == 1 {
+			// For custom functions with a known source position, return the
+			// function definition directly so go-to-definition navigates to the
+			// Go source file at the correct range.
+			if functionDef != nil && !functionDef.Range().IsEmpty() {
+				return []NodeDefinition{functionDef}
+			}
+
 			// Create a new definition with the correct range at the cursor position
 			// (not the original definition's range)
 			cursorDef := NewVariableDefinition(
