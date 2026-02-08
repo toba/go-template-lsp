@@ -1,7 +1,9 @@
 package template
 
 import (
+	"cmp"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -84,12 +86,10 @@ func countStructuralKeywords(line string) (opens, elses, ends int) {
 		all = append(all, kw{m[0], 'n'})
 	}
 
-	// Sort by position (insertion sort; typically very few items).
-	for i := 1; i < len(all); i++ {
-		for j := i; j > 0 && all[j].pos < all[j-1].pos; j-- {
-			all[j], all[j-1] = all[j-1], all[j]
-		}
-	}
+	// Sort by position.
+	slices.SortFunc(all, func(a, b kw) int {
+		return cmp.Compare(a.pos, b.pos)
+	})
 
 	// Mark inline pairs: walk left-to-right with a stack of open positions.
 	inline := make([]bool, len(all))
@@ -478,12 +478,10 @@ func computeLineDeltas(line string) (before, after int) {
 		events = append(events, tagEvent{pos: match[0], delta: delta})
 	}
 
-	// Sort events by position (insertion sort since typically few events)
-	for i := 1; i < len(events); i++ {
-		for j := i; j > 0 && events[j].pos < events[j-1].pos; j-- {
-			events[j], events[j-1] = events[j-1], events[j]
-		}
-	}
+	// Sort events by position.
+	slices.SortFunc(events, func(a, b tagEvent) int {
+		return cmp.Compare(a.pos, b.pos)
+	})
 
 	// Compute running delta; track minimum for beforeDelta
 	running := 0

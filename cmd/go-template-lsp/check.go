@@ -1,11 +1,12 @@
 package main
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 
 	tmpl "github.com/toba/go-template-lsp/internal/template"
 	"github.com/toba/go-template-lsp/internal/template/analyzer"
@@ -153,14 +154,14 @@ func collectDiagnostics(
 	}
 
 	// Sort by file, then line, then column.
-	sort.Slice(diagnostics, func(i, j int) bool {
-		if diagnostics[i].File != diagnostics[j].File {
-			return diagnostics[i].File < diagnostics[j].File
+	slices.SortFunc(diagnostics, func(a, b checkDiagnostic) int {
+		if c := cmp.Compare(a.File, b.File); c != 0 {
+			return c
 		}
-		if diagnostics[i].Line != diagnostics[j].Line {
-			return diagnostics[i].Line < diagnostics[j].Line
+		if c := cmp.Compare(a.Line, b.Line); c != 0 {
+			return c
 		}
-		return diagnostics[i].Column < diagnostics[j].Column
+		return cmp.Compare(a.Column, b.Column)
 	})
 
 	return diagnostics

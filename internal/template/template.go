@@ -1,6 +1,7 @@
 package template
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 
@@ -838,14 +840,10 @@ func calculateLength(rng lexer.Range) int {
 
 // sortSemanticTokens sorts tokens by position (line first, then character).
 func sortSemanticTokens(tokens []SemanticToken) {
-	for i := 1; i < len(tokens); i++ {
-		for j := i; j > 0; j-- {
-			if tokens[j].Line < tokens[j-1].Line ||
-				(tokens[j].Line == tokens[j-1].Line && tokens[j].StartChar < tokens[j-1].StartChar) {
-				tokens[j], tokens[j-1] = tokens[j-1], tokens[j]
-			} else {
-				break
-			}
+	slices.SortFunc(tokens, func(a, b SemanticToken) int {
+		if c := cmp.Compare(a.Line, b.Line); c != 0 {
+			return c
 		}
-	}
+		return cmp.Compare(a.StartChar, b.StartChar)
+	})
 }
