@@ -711,6 +711,79 @@ func TestHover_MultipleInstancesSameLine(t *testing.T) {
 	}
 }
 
+func TestDocumentLinks(t *testing.T) {
+	source := `{{define "logo-particles"}}content{{end}}
+{{template "logo-particles" .}}`
+
+	root, errs := template.ParseSingleFile([]byte(source))
+	if len(errs) != 0 {
+		t.Fatalf("Parse errors: %v", errs)
+	}
+
+	links := template.DocumentLinks(root)
+
+	if len(links) != 1 {
+		t.Fatalf("Expected 1 document link, got %d", len(links))
+	}
+
+	link := links[0]
+
+	if link.TemplateName != "logo-particles" {
+		t.Errorf("Expected template name %q, got %q", "logo-particles", link.TemplateName)
+	}
+
+	// The range should cover "logo-particles" without quotes
+	// Line 1: {{template "logo-particles" .}}
+	//                     ^^^^^^^^^^^^^^
+	// "logo-particles" starts at character 12 (after {{template ")
+	if link.Range.Start.Line != 1 {
+		t.Errorf("Expected link range start line 1, got %d", link.Range.Start.Line)
+	}
+
+	// Verify the range length covers the full hyphenated name
+	nameLen := link.Range.End.Character - link.Range.Start.Character
+	if nameLen != len("logo-particles") {
+		t.Errorf("Expected link range length %d, got %d", len("logo-particles"), nameLen)
+	}
+}
+
+func TestDocumentLinks_MultipleLinks(t *testing.T) {
+	source := `{{define "header-nav"}}nav{{end}}
+{{define "footer-links"}}links{{end}}
+{{template "header-nav" .}}
+{{template "footer-links" .}}`
+
+	root, errs := template.ParseSingleFile([]byte(source))
+	if len(errs) != 0 {
+		t.Fatalf("Parse errors: %v", errs)
+	}
+
+	links := template.DocumentLinks(root)
+
+	if len(links) != 2 {
+		t.Fatalf("Expected 2 document links, got %d", len(links))
+	}
+
+	names := make(map[string]bool)
+	for _, link := range links {
+		names[link.TemplateName] = true
+	}
+
+	if !names["header-nav"] {
+		t.Error("Expected link for template 'header-nav'")
+	}
+	if !names["footer-links"] {
+		t.Error("Expected link for template 'footer-links'")
+	}
+}
+
+func TestDocumentLinks_NilRoot(t *testing.T) {
+	links := template.DocumentLinks(nil)
+	if links != nil {
+		t.Errorf("Expected nil links for nil root, got %v", links)
+	}
+}
+
 // TestHover_KeywordsReturnEmpty verifies that hovering over control flow keywords
 // (if, else, range, end, etc.) returns empty hover content, not incorrect values.
 func TestHover_KeywordsReturnEmpty(t *testing.T) {

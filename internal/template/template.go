@@ -533,6 +533,70 @@ func DocumentHighlight(
 	return ranges
 }
 
+// DocumentLinkInfo represents a template call that should be rendered as a clickable link.
+type DocumentLinkInfo struct {
+	Range        lexer.Range // range of the template name (without quotes)
+	TemplateName string      // the template name
+	TargetURI    string      // resolved file URI of the template definition, if known
+}
+
+// DocumentLinks returns document links for all template calls in the AST.
+// Each link covers the template name (without quotes) in {{template "name"}} calls.
+func DocumentLinks(rootNode *parser.GroupStatementNode) []DocumentLinkInfo {
+	if rootNode == nil {
+		return nil
+	}
+
+	links := make([]DocumentLinkInfo, 0, 10)
+	queue := make([]*parser.GroupStatementNode, 0, 10)
+	queue = append(queue, rootNode)
+	counter := 0
+
+	for len(queue) > 0 {
+		if counter++; counter > 10_000 {
+			panic("infinite loop while computing 'DocumentLinks()'")
+		}
+
+		node := queue[0]
+		queue = queue[1:]
+
+		// Collect template calls from this scope
+		for _, tmplCall := range node.ShortCut.TemplateCallUsed {
+			if tmplCall.TemplateName == nil {
+				continue
+			}
+
+			nameRange := tmplCall.TemplateName.Range.Shrink(1, 1) // strip quotes
+			templateName := string(tmplCall.TemplateName.Value)
+
+			link := DocumentLinkInfo{
+				Range:        nameRange,
+				TemplateName: templateName,
+			}
+
+			// Try to resolve the target file URI
+			templateManager := checker.TemplateManager
+			for templateScope, def := range templateManager.TemplateScopeToDefinition {
+				if templateName == templateScope.TemplateName() {
+					link.TargetURI = def.FileName()
+					break
+				}
+			}
+
+			links = append(links, link)
+		}
+
+		// Enqueue child groups
+		for _, statement := range node.Statements {
+			if groupNode, ok := statement.(*parser.GroupStatementNode); ok {
+				queue = append(queue, groupNode)
+			}
+		}
+	}
+
+	return links
+}
+
 // HasFileExtension reports whether fileName's extension is found within extensions.
 func HasFileExtension(fileName string, extensions []string) bool {
 	for _, ext := range extensions {

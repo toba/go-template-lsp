@@ -31,6 +31,7 @@ const (
 	MethodDefinition          = "textDocument/definition"
 	MethodFoldingRange        = "textDocument/foldingRange"
 	MethodDocumentHighlight   = "textDocument/documentHighlight"
+	MethodDocumentLink        = "textDocument/documentLink"
 	MethodPublishDiagnostics  = "textDocument/publishDiagnostics"
 	MethodSemanticTokensFull  = "textDocument/semanticTokens/full"
 	MethodSemanticTokensRange = "textDocument/semanticTokens/range"

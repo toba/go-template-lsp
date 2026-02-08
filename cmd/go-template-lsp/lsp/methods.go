@@ -109,6 +109,7 @@ type ServerCapabilities struct {
 	FoldingRangeProvider       bool                   `json:"foldingRangeProvider"`
 	DocumentHighlightProvider  bool                   `json:"documentHighlightProvider"`
 	DocumentFormattingProvider bool                   `json:"documentFormattingProvider"`
+	DocumentLinkProvider       bool                   `json:"documentLinkProvider"`
 	SemanticTokensProvider     *SemanticTokensOptions `json:"semanticTokensProvider,omitempty"`
 }
 
@@ -256,6 +257,7 @@ func ProcessInitializeRequest(
 				FoldingRangeProvider:       true,
 				DocumentHighlightProvider:  true,
 				DocumentFormattingProvider: true,
+				DocumentLinkProvider:       true,
 				SemanticTokensProvider: &SemanticTokensOptions{
 					Legend: SemanticTokensLegend{
 						TokenTypes:     SemanticTokenTypes,
@@ -818,6 +820,76 @@ func ProcessDocumentHighlightRequest(
 	responseData, err := json.Marshal(res)
 	if err != nil {
 		slog.Warn("Error marshalling document highlight response: " + err.Error())
+		return nil, fileName
+	}
+
+	return responseData, fileName
+}
+
+// DocumentLinkParams holds parameters for textDocument/documentLink.
+type DocumentLinkParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+// DocumentLinkResult represents a document link.
+type DocumentLinkResult struct {
+	Range  Range  `json:"range"`
+	Target string `json:"target,omitempty"`
+}
+
+// ProcessDocumentLinkRequest handles textDocument/documentLink.
+func ProcessDocumentLinkRequest(
+	data []byte,
+	parsedFiles map[string]*parser.GroupStatementNode,
+	openFiles map[string]string,
+) (response []byte, fileName string) {
+	req := RequestMessage[DocumentLinkParams]{}
+
+	err := json.Unmarshal(data, &req)
+	if err != nil {
+		slog.Warn("Error unmarshalling document link request: " + err.Error())
+		return nil, ""
+	}
+
+	var rootNode *parser.GroupStatementNode
+	fileUri := req.Params.TextDocument.Uri
+
+	fileContent, ok := openFiles[fileUri]
+
+	if ok {
+		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
+	}
+
+	if rootNode == nil {
+		rootNode = parsedFiles[fileUri]
+	}
+
+	var res ResponseMessage[[]DocumentLinkResult]
+	res.Id = req.Id
+	res.JsonRpc = req.JsonRpc
+
+	if rootNode == nil {
+		responseData, err := json.Marshal(res)
+		if err != nil {
+			slog.Warn("Error marshalling document link response: " + err.Error())
+			return nil, fileName
+		}
+		return responseData, fileName
+	}
+
+	links := tmpl.DocumentLinks(rootNode)
+
+	for _, link := range links {
+		result := DocumentLinkResult{
+			Range:  ConvertParserRangeToLspRange(link.Range),
+			Target: link.TargetURI,
+		}
+		res.Result = append(res.Result, result)
+	}
+
+	responseData, err := json.Marshal(res)
+	if err != nil {
+		slog.Warn("Error marshalling document link response: " + err.Error())
 		return nil, fileName
 	}
 

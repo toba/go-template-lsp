@@ -1,5 +1,6 @@
 {
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"effortLevel": "medium",
 	"cleanupPeriodDays": 99999,
 	"env": {
 		"DISABLE_BUG_COMMAND": "1",
@@ -41,11 +42,5 @@
 			"Bash(open:*)",
 			"Bash(* ./cmd/migrate *)"
 		]
-	},
-	"sandbox": {
-		"enabled": false,
-		"autoAllowBashIfSandboxed": true
-	},
-	"spinnerTipsEnabled": false,
-	"alwaysThinkingEnabled": true
+	}
 }

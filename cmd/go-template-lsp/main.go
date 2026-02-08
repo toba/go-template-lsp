@@ -49,6 +49,7 @@ type requestCounter struct {
 	FoldingRange          int
 	Formatting            int
 	DocumentHighlight     int
+	DocumentLink          int
 	Definition            int
 	Hover                 int
 	SemanticTokens        int
@@ -70,6 +71,13 @@ const (
 var serverCounter requestCounter
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "check" {
+		checkFlags := flag.NewFlagSet("check", flag.ExitOnError)
+		jsonFlag := checkFlags.Bool("json", false, "output as JSON")
+		_ = checkFlags.Parse(os.Args[2:])
+		os.Exit(runCheck(checkFlags.Args(), *jsonFlag))
+	}
+
 	versionFlag := flag.Bool("version", false, "print the LSP version")
 	flag.Parse()
 
@@ -238,6 +246,15 @@ func main() {
 			serverCounter.DocumentHighlight++
 			isRequestResponse = true
 			response, _ = lsp.ProcessDocumentHighlightRequest(
+				data,
+				storage.ParsedFiles,
+				lsp.FilesOpenedByEditor,
+			)
+
+		case lsp.MethodDocumentLink:
+			serverCounter.DocumentLink++
+			isRequestResponse = true
+			response, _ = lsp.ProcessDocumentLinkRequest(
 				data,
 				storage.ParsedFiles,
 				lsp.FilesOpenedByEditor,
