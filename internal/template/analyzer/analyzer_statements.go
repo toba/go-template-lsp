@@ -453,6 +453,14 @@ func definitionAnalysisGroupStatement(
 			candidateType := buildTypeFromTreeOfType(recheck.candidate)
 			constraintType := buildTypeFromTreeOfType(recheck.constraint)
 
+			// Skip type checking when inference was defeated (toDiscard nodes
+			// produce Invalid). This avoids false positives for variables
+			// assigned from any-typed expressions (e.g., map[string]any fields).
+			if types.Identical(candidateType, types.Typ[types.Invalid]) ||
+				types.Identical(constraintType, types.Typ[types.Invalid]) {
+				continue
+			}
+
 			switch recheck.operation {
 			case operatorStrictType:
 				_, errMsg := TypeCheckAgainstConstraint(candidateType, constraintType)

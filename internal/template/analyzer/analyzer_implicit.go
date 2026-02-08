@@ -22,7 +22,12 @@ func guessVariableTypeFromImplicitType(varDef *VariableDefinition) types.Type {
 	// reach here only if variable of type 'any'
 	inferredType := buildTypeFromTreeOfType(varDef.TreeImplicitType)
 
-	if types.Identical(inferredType, types.Typ[types.Invalid]) && varDef.name == "." {
+	// When inference produces Invalid (e.g., all tree nodes are toDiscard),
+	// fall back to the original variable type rather than propagating Invalid
+	// as a concrete type. This prevents false positive type errors for
+	// variables assigned from any-typed expressions (e.g., $u := .Field
+	// where . comes from map[string]any).
+	if types.Identical(inferredType, types.Typ[types.Invalid]) {
 		inferredType = varDef.typ
 	}
 

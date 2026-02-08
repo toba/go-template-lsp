@@ -434,6 +434,7 @@ func TestMapStringAnyNoFalsePositives(t *testing.T) {
 		source          string
 		forbiddenErrors []string
 	}{
+		// Category 1: Basic cross-template field access on partially-inferred dot
 		{
 			name: "two templates accessing different fields from any-typed dot",
 			source: `{{define "header"}}{{.Title}}{{end}}
@@ -445,6 +446,64 @@ func TestMapStringAnyNoFalsePositives(t *testing.T) {
 			source: `{{define "sidebar"}}{{.Links}}{{end}}
 {{define "main"}}{{.Content}}{{.Author}}{{template "sidebar" .}}{{end}}`,
 			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
+		// Category 1b: Template called with different data shapes from different call sites
+		{
+			name: "template called from multiple sites with different data shapes",
+			source: `{{define "flash"}}{{.Message}}{{.AllowedDomains}}{{end}}
+{{define "login"}}{{.Page}}{{template "flash" .}}{{end}}
+{{define "register"}}{{.Email}}{{template "flash" .}}{{end}}`,
+			forbiddenErrors: []string{"field not found", "type mismatch"},
+		},
+		// Category 2: Dollar variable from range accessing fields on partially-inferred struct
+		{
+			name: "range variable accessing multiple fields across template sections",
+			source: `{{define "grid"}}
+{{range .Units}}
+<div>{{.Name}} {{.Bedrooms}} {{.City}}</div>
+<span>{{.ID}}</span>
+{{end}}
+{{end}}`,
+			forbiddenErrors: []string{
+				"field not found",
+				"field or method not found",
+				"type mismatch",
+			},
+		},
+		{
+			name: "dollar variable from range with field access",
+			source: `{{define "grid"}}
+{{range $i, $unit := .Units}}
+<div>{{$unit.Name}} {{$unit.Bedrooms}}</div>
+<span>{{$unit.ID}} {{$unit.City}}</span>
+{{end}}
+{{end}}`,
+			forbiddenErrors: []string{
+				"field not found",
+				"field or method not found",
+				"type mismatch",
+			},
+		},
+		// Category 3: Dollar variable assigned from any-typed field, field access in eq comparison
+		{
+			name: "dollar variable from any field used in eq comparison",
+			source: `{{define "page"}}
+{{$u := .Units}}
+{{if eq $u.View "table"}}Table{{end}}
+{{if eq $u.View "map"}}Map{{end}}
+{{end}}`,
+			forbiddenErrors: []string{"type mismatch", "invalid type", "field not found"},
+		},
+		{
+			name: "dollar variable from any field with multiple field comparisons",
+			source: `{{define "page"}}
+{{$u := .Units}}
+{{if eq $u.View "table"}}Table{{end}}
+{{if eq $u.FilterConfidence "low"}}Low{{end}}
+{{if eq $u.FilterConfidence "high"}}High{{end}}
+{{$u.FilterBedrooms}}
+{{end}}`,
+			forbiddenErrors: []string{"type mismatch", "invalid type", "field not found"},
 		},
 	}
 

@@ -1,11 +1,11 @@
 ---
 # golsp-35ym
 title: False positive type errors for map[string]any template data
-status: in-progress
+status: completed
 type: bug
 priority: normal
 created_at: 2026-02-08T17:58:40Z
-updated_at: 2026-02-08T18:04:04Z
+updated_at: 2026-02-08T18:51:40Z
 ---
 
 ## Problem
@@ -61,28 +61,30 @@ sub-page.gohtml:3:14: type mismatch, expected 'string' but got 'invalid type'
 sub-page.gohtml:4:16: type mismatch, field not found: '$.PortfolioID' of type 'any'
 \`\`\`
 
-## Real-world examples from Pacer (27 errors, all false positives)
+## Real-world examples from Pacer
 
-### Category 1: "field not found" on map[string]any top-level fields
+### ~~Category 1: "field not found" on map[string]any top-level fields~~ ✅ FIXED
 
-These fields are all set via \`map[string]any\` data and work at runtime:
+Fixed in latest version. These 10 errors no longer appear:
+
+| ~~\`auth.gohtml:15\`~~ | ~~\`$.Page\`~~ | ~~field not found on type 'string'~~ |
+| ~~\`job/job.gohtml:7-9\`~~ | ~~\`$.IsRunning\`, \`$.AverageDuration\`, \`$.NumRuns\`~~ | ~~field not found~~ |
+| ~~\`rm.gohtml:12\`~~ | ~~\`$.PortfolioID\`~~ | ~~field not found~~ |
+| ~~\`res-search.gohtml:3-4\`~~ | ~~\`$.OTAOptions\`, \`$.Results\`~~ | ~~field not found~~ |
+| ~~\`res-trends.gohtml:20\`~~ | ~~\`$.SortBy\`, \`$.Trends\`~~ | ~~field not found~~ |
+| ~~\`portfolio.gohtml:60\`~~ | ~~\`$.Billing\`~~ | ~~field not found~~ |
+| ~~\`calendar.gohtml:52\`~~ | ~~\`$.Grid.Dates\`~~ | ~~field not found~~ |
+
+### Category 1b: "field not found" — still present (2 errors)
+
+Two sub-template field-not-found errors remain:
 
 | File | Field | Linter says | Reality |
 |------|-------|-------------|---------|
-| \`auth.gohtml:15\` | \`$.Page\` | field not found on type 'string' | Set as \`"Page": "login"\` |
 | \`auth-router.gohtml:2\` | \`$.Message\` | field not found on type 'any' | Accessed conditionally, nil-safe |
 | \`auth-router.gohtml:3\` | \`$.AllowedDomains\` | field not found on type 'map[any]any' | Set as \`"AllowedDomains": slice\` |
-| \`job/job.gohtml:7\` | \`$.IsRunning\` | field not found on type 'any' | Set as \`"IsRunning": bool\` |
-| \`job/job.gohtml:8\` | \`$.AverageDuration\` | field not found on type 'struct{...}' | Set as \`"AverageDuration": *time.Duration\` |
-| \`job/job.gohtml:9\` | \`$.NumRuns\` | field not found on type 'any' | Set as \`"NumRuns": int\` |
-| \`rm.gohtml:12\` | \`$.PortfolioID\` | field not found on type 'any' | Set by some handlers |
-| \`res-search.gohtml:3\` | \`$.OTAOptions\` | field not found on type 'any' | Set as \`"OTAOptions": []MultiSelectOption\` |
-| \`res-search.gohtml:4\` | \`$.Results\` | field not found on type 'struct{...}' | Set as \`"Results": *SearchResults\` |
-| \`res-trends.gohtml:20\` | \`$.SortBy\` | field not found on type 'string' | Set as \`"SortBy": string\` |
-| \`res-trends.gohtml:20\` | \`$.Trends\` | field not found on type 'struct{...}' | Set as \`"Trends": *Trends\` |
-| \`portfolio.gohtml:60\` | \`$.Billing\` | field not found on type 'struct{...}' | Set as \`"Billing": portfolio.Billing\` |
 
-### Category 2: "field or method not found" on nested struct fields
+### Category 2: "field or method not found" on nested struct fields (8 errors)
 
 The linter partially infers struct types from template usage but misses fields:
 
@@ -96,9 +98,9 @@ The linter partially infers struct types from template usage but misses fields:
 | \`calendar-grid.gohtml:25\` | \`$unit.ID\` | \`GridUnit.ID\` exists (int64) |
 | \`calendar.gohtml:52\` | \`$.Grid.Dates\` | \`GridData.Dates\` exists (\`[]DateHeader\`) |
 
-### Category 3: "expected 'string' but got 'invalid type'" for struct fields through map indirection
+### Category 3: "expected 'string' but got 'invalid type'" for struct fields through map indirection (7 errors)
 
-The linter loses type info when a struct is stored in \`map[string]any\` and then accessed:
+The linter loses type info when a struct is stored in \`map[string]any\` and then accessed via \`$u := .Units\`:
 
 | File | Expression | Reality |
 |------|-----------|---------|
@@ -109,15 +111,19 @@ The linter loses type info when a struct is stored in \`map[string]any\` and the
 | \`units.gohtml:86\` | \`eq $u.FilterConfidence "medium"\` | same |
 | \`units.gohtml:87\` | \`eq $u.FilterConfidence "high"\` | same |
 | \`units.gohtml:102\` | \`eq $u.View "map"\` | same as line 29 |
-| \`user-link.gohtml:6\` | \`$.PictureURL\` | User struct has PictureURL |
 
 ## Possible solutions
 
-- [ ] Support \`map[string]any\` as template data — treat map keys as valid field names
+- [x] Support \`map[string]any\` as template data — treat map keys as valid field names
 - [ ] Add type annotation comments (\`{{/* @type MyStruct */}}\`) so templates can declare their expected data type
 - [ ] Add a \`//gotmpls:ignore\` or \`{{/* gotmpls:ignore */}}\` directive to suppress specific errors
 - [ ] Read Go source to discover the actual types passed to \`ExecuteTemplate\` calls (ambitious but ideal)
 
+## Progress
+
+- v0.12.1: Fixed Category 1 (map field access + cross-template partial struct compat). Error count: **27 → 17**.
+- v0.12.2: Fixed Categories 1b, 2, and 3 (dollar variable inference fallback + recheck skip for defeated inference). Error count: **17 → 0** (all false positives eliminated).
+
 ## Impact
 
-In our codebase, **100% of the 27 check errors are false positives**, making the check output unusable for CI. We cannot adopt \`check\` in CI until false positive rate drops to near zero.
+All 27 false positive errors from \`map[string]any\` template data have been resolved. The \`check\` subcommand should now be usable in CI for projects using this pattern.
