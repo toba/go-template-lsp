@@ -142,8 +142,7 @@ func convertThirdPartiesParseErrorToLocalError(
 	if parseError != nil {
 		// log.Println("comment scanner error found, ", parseError)
 
-		var errorList scanner.ErrorList
-		ok := errors.As(parseError, &errorList)
+		errorList, ok := errors.AsType[scanner.ErrorList](parseError)
 		if !ok {
 			panic(
 				"unexpected error, error obtained by go code parsing did not return expected type ('scanner.ErrorList')",

@@ -150,10 +150,7 @@ func ParseFilesInWorkspace(
 
 	var wg sync.WaitGroup
 	for fileName, content := range workspaceFiles {
-		wg.Add(1)
-		go func(fileName string, content []byte) {
-			defer wg.Done()
-
+		wg.Go(func() {
 			// Acquire semaphore
 			sem <- struct{}{}
 			defer func() { <-sem }()
@@ -166,7 +163,7 @@ func ParseFilesInWorkspace(
 			errs = append(errs, parseErrs...)
 
 			results <- parseResult{fileName, parseTree, errs}
-		}(fileName, content)
+		})
 	}
 
 	// Close results channel when all goroutines complete

@@ -18,11 +18,8 @@ func TestSendToLspClient_ConcurrentRace(t *testing.T) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
-	wg.Add(goroutines)
-
 	for i := range goroutines {
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for j := range msgsPerGoroutine {
 				msg := []byte(
 					`{"jsonrpc":"2.0","id":` + strconv.Itoa(
@@ -33,7 +30,7 @@ func TestSendToLspClient_ConcurrentRace(t *testing.T) {
 				SendToLspClient(&buf, msg)
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -88,11 +85,8 @@ func TestSendToLspClient_ConcurrentFrameIntegrity(t *testing.T) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
-	wg.Add(goroutines)
-
 	for i := range goroutines {
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for j := range msgsPerGoroutine {
 				msg := []byte(
 					`{"jsonrpc":"2.0","id":` + strconv.Itoa(
@@ -103,7 +97,7 @@ func TestSendToLspClient_ConcurrentFrameIntegrity(t *testing.T) {
 				SendToLspClient(pw, msg)
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 
 	go func() {

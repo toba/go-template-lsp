@@ -3,7 +3,7 @@
 # Run `mise use <tool>@<version>` to update a tool version
 
 [tools]
-go = "1.25"
+go = "1.26.0"
 "github:hmans/beans" = "latest"
 "github:STR-Consulting/bean-me-up" = "latest"
 golangci-lint = "2.8"

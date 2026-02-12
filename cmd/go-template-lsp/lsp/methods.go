@@ -21,6 +21,23 @@ import (
 
 var FilesOpenedByEditor = make(map[string]string)
 
+// resolveFileNode returns the parsed AST for a file URI, preferring
+// a fresh parse of the editor's open content over the workspace cache.
+func resolveFileNode(
+	fileUri string,
+	openFiles map[string]string,
+	parsedFiles map[string]*parser.GroupStatementNode,
+) *parser.GroupStatementNode {
+	if content, ok := openFiles[fileUri]; ok {
+		if node, _ := tmpl.ParseSingleFile(
+			[]byte(content),
+		); node != nil {
+			return node
+		}
+	}
+	return parsedFiles[fileUri]
+}
+
 // ID represents a JSON-RPC request ID that can be either a string or number.
 type ID int
 
@@ -646,18 +663,8 @@ func ProcessFoldingRangeRequest(
 		return nil, ""
 	}
 
-	var rootNode *parser.GroupStatementNode = nil
 	fileUri := req.Params.TextDocument.Uri
-
-	fileContent, ok := openFiles[fileUri]
-
-	if ok {
-		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
-	}
-
-	if rootNode == nil {
-		rootNode = parsedFiles[fileUri]
-	}
+	rootNode := resolveFileNode(fileUri, openFiles, parsedFiles)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -665,7 +672,10 @@ func ProcessFoldingRangeRequest(
 			slog.Error(msg,
 				slog.Group("details",
 					slog.String("file_uri", fileUri),
-					slog.String("file_content", fileContent),
+					slog.String(
+						"file_content",
+						openFiles[fileUri],
+					),
 				),
 			)
 			panic(msg)
@@ -767,18 +777,8 @@ func ProcessDocumentHighlightRequest(
 		return nil, ""
 	}
 
-	var rootNode *parser.GroupStatementNode
 	fileUri := req.Params.TextDocument.Uri
-
-	fileContent, ok := openFiles[fileUri]
-
-	if ok {
-		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
-	}
-
-	if rootNode == nil {
-		rootNode = parsedFiles[fileUri]
-	}
+	rootNode := resolveFileNode(fileUri, openFiles, parsedFiles)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -786,7 +786,10 @@ func ProcessDocumentHighlightRequest(
 			slog.Error(msg,
 				slog.Group("details",
 					slog.String("file_uri", fileUri),
-					slog.String("file_content", fileContent),
+					slog.String(
+						"file_content",
+						openFiles[fileUri],
+					),
 				),
 			)
 			panic(msg)
@@ -856,18 +859,8 @@ func ProcessDocumentLinkRequest(
 		return nil, ""
 	}
 
-	var rootNode *parser.GroupStatementNode
 	fileUri := req.Params.TextDocument.Uri
-
-	fileContent, ok := openFiles[fileUri]
-
-	if ok {
-		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
-	}
-
-	if rootNode == nil {
-		rootNode = parsedFiles[fileUri]
-	}
+	rootNode := resolveFileNode(fileUri, openFiles, parsedFiles)
 
 	var res ResponseMessage[[]DocumentLinkResult]
 	res.Id = req.Id
@@ -925,18 +918,8 @@ func ProcessSemanticTokensRequest(
 		return nil, ""
 	}
 
-	var rootNode *parser.GroupStatementNode
 	fileUri := req.Params.TextDocument.Uri
-
-	fileContent, ok := openFiles[fileUri]
-
-	if ok {
-		rootNode, _ = tmpl.ParseSingleFile([]byte(fileContent))
-	}
-
-	if rootNode == nil {
-		rootNode = parsedFiles[fileUri]
-	}
+	rootNode := resolveFileNode(fileUri, openFiles, parsedFiles)
 
 	var res ResponseMessage[*SemanticTokensResult]
 	res.Id = req.Id

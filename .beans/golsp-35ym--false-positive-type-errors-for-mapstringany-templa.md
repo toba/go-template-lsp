@@ -75,28 +75,20 @@ Fixed in latest version. These 10 errors no longer appear:
 | ~~\`portfolio.gohtml:60\`~~ | ~~\`$.Billing\`~~ | ~~field not found~~ |
 | ~~\`calendar.gohtml:52\`~~ | ~~\`$.Grid.Dates\`~~ | ~~field not found~~ |
 
-### Category 1b: "field not found" — still present (2 errors)
+### ~~Category 1b: "field not found" — sub-template fields~~ ✅ FIXED
 
-Two sub-template field-not-found errors remain:
+Fixed in v0.12.3. These 2 errors no longer appear:
 
-| File | Field | Linter says | Reality |
-|------|-------|-------------|---------|
-| \`auth-router.gohtml:2\` | \`$.Message\` | field not found on type 'any' | Accessed conditionally, nil-safe |
-| \`auth-router.gohtml:3\` | \`$.AllowedDomains\` | field not found on type 'map[any]any' | Set as \`"AllowedDomains": slice\` |
+| ~~\`auth-router.gohtml:2\`~~ | ~~\`$.Message\`~~ | ~~field not found on type 'any'~~ |
+| ~~\`auth-router.gohtml:3\`~~ | ~~\`$.AllowedDomains\`~~ | ~~field not found on type 'map[any]any'~~ |
 
-### Category 2: "field or method not found" on nested struct fields (8 errors)
+### ~~Category 2: "field or method not found" on nested struct fields~~ ✅ FIXED
 
-The linter partially infers struct types from template usage but misses fields:
+Fixed in v0.12.3. These 8 errors no longer appear:
 
-| File | Field | Reality |
-|------|-------|---------|
-| \`calendar-grid.gohtml:17\` | \`$unit.Name\` | \`GridUnit.Name\` exists (string) |
-| \`calendar-grid.gohtml:17\` | \`$unit.Bedrooms\` | \`GridUnit.Bedrooms\` exists (int16) |
-| \`calendar-grid.gohtml:17\` | \`$unit.City\` | \`GridUnit.City\` exists (string) |
-| \`calendar-grid.gohtml:19\` | \`$unit.Name\` | same |
-| \`calendar-grid.gohtml:20\` | \`$unit.Bedrooms\`, \`$unit.City\` | same |
-| \`calendar-grid.gohtml:25\` | \`$unit.ID\` | \`GridUnit.ID\` exists (int64) |
-| \`calendar.gohtml:52\` | \`$.Grid.Dates\` | \`GridData.Dates\` exists (\`[]DateHeader\`) |
+| ~~\`calendar-grid.gohtml:17\`~~ | ~~\`$unit.Name\`, \`$unit.Bedrooms\`, \`$unit.City\`~~ | ~~field or method not found~~ |
+| ~~\`calendar-grid.gohtml:19-20\`~~ | ~~\`$unit.Name\`, \`$unit.Bedrooms\`, \`$unit.City\`~~ | ~~same~~ |
+| ~~\`calendar-grid.gohtml:25\`~~ | ~~\`$unit.ID\`~~ | ~~field or method not found~~ |
 
 ### ~~Category 3: "expected 'string' but got 'invalid type'" for struct fields through map indirection~~ ✅ FIXED
 
@@ -119,8 +111,8 @@ Fixed in v0.12.2. These 7 errors no longer appear:
 
 - v0.12.1: Fixed Category 1 (map field access + cross-template partial struct compat). Error count: **27 → 17**.
 - v0.12.2: Fixed Category 3 (struct fields through map indirection). Error count: **17 → 10**.
-- Categories 1b and 2 remain: **10 false positives** (2 sub-template field-not-found + 8 nested struct field-not-found).
+- v0.12.3: Fixed Categories 1b and 2 (sub-template fields + nested struct fields in range loops). Error count: **10 → 0**.
 
-## Impact
+## Summary of Changes
 
-10 false positives remain — all in categories 1b (sub-template data passing) and 2 (nested struct fields in `range` loops). CI adoption still blocked.
+All 27 false positive type errors from `map[string]any` template data have been resolved across three releases (v0.12.1–v0.12.3). The `check` subcommand now passes cleanly and is ready for CI adoption.

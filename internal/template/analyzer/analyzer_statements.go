@@ -894,11 +894,9 @@ func definitionAnalysisComment(
 		Importer:         importer.Default(),
 		IgnoreFuncBodies: true,
 		Error: func(err error) {
-			errsType = append(errsType, func() types.Error {
-				var target types.Error
-				_ = errors.As(err, &target)
-				return target
-			}())
+			if target, ok := errors.AsType[types.Error](err); ok {
+				errsType = append(errsType, target)
+			}
 		},
 	}
 
