@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go/types"
-	"log"
+	"log/slog"
 	"strconv"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
@@ -23,18 +23,22 @@ func definitionAnalysisVariableDeclaration(
 			"'variable declaration' cannot be parentless; it should be contained in at least one scope",
 		)
 	} else if node.Kind() != parser.KindVariableDeclaration {
-		log.Printf(
-			"found value mismatch for 'VariableDeclarationNode.Kind' during DefinitionAnalysis()"+"\n node = %#v\n parent = %#v\n",
+		slog.Error(
+			"found value mismatch for 'VariableDeclarationNode.Kind' during DefinitionAnalysis()",
+			"node",
 			node,
+			"parent",
 			parentScope,
 		)
 		panic(
 			"found value mismatch for 'VariableDeclarationNode.Kind' during DefinitionAnalysis()",
 		)
 	} else if localVariables == nil || globalVariables == nil {
-		log.Printf(
-			"either 'localVariables' or 'globalVariables' shouldn't be nil for 'VariableDeclarationNode.DefinitionAnalysis()'"+"\n localVariables = %#v\n globalVariables = %#v\n",
+		slog.Error(
+			"either 'localVariables' or 'globalVariables' shouldn't be nil for 'VariableDeclarationNode.DefinitionAnalysis()'",
+			"localVariables",
 			localVariables,
+			"globalVariables",
 			globalVariables,
 		)
 		panic(
@@ -55,8 +59,9 @@ func definitionAnalysisVariableDeclaration(
 	}
 
 	if len(node.VariableNames) == 0 && len(node.VariableNames) > 2 {
-		log.Printf(
-			"cannot analyze variable declaration with 0 or more than 2 variables; this error must be caught and discarded while parsing"+"\n node = %#v\n",
+		slog.Error(
+			"cannot analyze variable declaration with 0 or more than 2 variables; this error must be caught and discarded while parsing",
+			"node",
 			node,
 		)
 		panic(

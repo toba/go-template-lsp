@@ -3,7 +3,7 @@ package analyzer
 import (
 	"go/token"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
@@ -122,14 +122,14 @@ func NewFileDefinitionFromPartialFile(
 	outterTemplate map[*parser.GroupStatementNode]*TemplateDefinition,
 ) (*FileDefinition, map[string]*VariableDefinition, map[string]*VariableDefinition) {
 	if partialFile == nil {
-		log.Printf("got a <nil> partial File\n")
+		slog.Error("got a <nil> partial File")
 		panic("got a <nil> partial File")
 	}
 
 	if partialFile.root == nil {
-		log.Printf(
-			"partial file without root parse tree found at start definition analysis"+
-				"\n fileName = %s\n",
+		slog.Error(
+			"partial file without root parse tree found at start definition analysis",
+			"fileName",
 			partialFile.FileName(),
 		)
 		panic("partial file without root parse tree found at start definition analysis")
@@ -300,7 +300,7 @@ func DefinitionAnalysisFromPartialFile(
 	outterTemplate map[*parser.GroupStatementNode]*TemplateDefinition,
 ) (*FileDefinition, []lexer.Error) {
 	if partialFile == nil {
-		log.Printf(
+		slog.Error(
 			"expected a partial file but got <nil> for 'DefinitionAnalysisFromPartialFile()'",
 		)
 		panic(

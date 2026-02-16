@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
@@ -39,7 +39,7 @@ func createImplicitTypeFromRealType(
 	convertGoAstPositionToProjectRange func(token.Pos) lexer.Range,
 ) *nodeImplicitType {
 	if parentNode == nil {
-		log.Printf("cannot build implicit type tree from <nil> parent node")
+		slog.Error("cannot build implicit type tree from <nil> parent node")
 		panic("cannot build implicit type tree from <nil> parent node")
 	}
 
@@ -127,8 +127,9 @@ func buildTypeFromTreeOfType(tree *nodeImplicitType) types.Type {
 
 	if tree.isIterable {
 		if len(tree.children) > 2 {
-			log.Printf(
-				"no iterable implicit node can have more than 2 children"+"\n tree = %#v\n",
+			slog.Error(
+				"no iterable implicit node can have more than 2 children",
+				"tree",
 				tree,
 			)
 			panic("no iterable implicit node can have more than 2 children")
@@ -143,8 +144,9 @@ func buildTypeFromTreeOfType(tree *nodeImplicitType) types.Type {
 
 		valueTree := tree.children["value"]
 		if valueTree == nil {
-			log.Printf(
-				"inferred iterable cannot exist without a 'value' node in its type definition"+"\n tree = %#v\n",
+			slog.Error(
+				"inferred iterable cannot exist without a 'value' node in its type definition",
+				"tree",
 				tree,
 			)
 			panic(
@@ -268,24 +270,25 @@ func insertIterableIntoImplicitTypeNode(
 	keyDefinition, valueDefinition *VariableDefinition,
 ) *parser.ParseError {
 	if tree == nil {
-		log.Printf(
-			"expected an implicit node to insert interable type but found <nil>"+"\n keyDef = %#v \n valDef = %#v\n",
-			keyDefinition,
-			valueDefinition,
+		slog.Error("expected an implicit node to insert interable type but found <nil>",
+			"keyDef", keyDefinition,
+			"valDef", valueDefinition,
 		)
 		panic("expected an implicit node to insert interable type but found <nil>")
 	} else if valueDefinition == nil {
-		log.Printf(
-			"found <nil> as iterable value type\n treeNode = %#v\n keyDef = %#v\n",
-			tree,
-			keyDefinition,
+		slog.Error("found <nil> as iterable value type",
+			"treeNode", tree,
+			"keyDef", keyDefinition,
 		)
 		panic("found <nil> as iterable value type")
 	} else if !types.Identical(tree.fieldType, typeAny.Type()) {
-		log.Printf(
-			"loop 'key' and 'value' have been created expecting <any-type> for the expression\n tree = %s\n keyDef = %s\n valDef = %s\n",
+		slog.Error(
+			"loop 'key' and 'value' have been created expecting <any-type> for the expression",
+			"tree",
 			tree,
+			"keyDef",
 			keyDefinition,
+			"valDef",
 			valueDefinition,
 		)
 		panic(
@@ -299,19 +302,17 @@ func insertIterableIntoImplicitTypeNode(
 
 	if tree.isIterable { // if 'iterable' already inferred earlier, use it rather than creating a new one
 		if len(tree.children) == 0 {
-			log.Printf(
-				"no iterable implicit node can have 0 childreen"+"\n tree = %#v\n key = %#v\n value = %#v\n",
-				tree,
-				keyDefinition,
-				valueDefinition,
+			slog.Error("no iterable implicit node can have 0 childreen",
+				"tree", tree,
+				"key", keyDefinition,
+				"value", valueDefinition,
 			)
 			panic("no iterable implicit node can have 0 childreen")
 		} else if len(tree.children) > 2 {
-			log.Printf(
-				"no iterable implicit node can have more than 2 children"+"\n tree = %#v\n key = %#v\n value = %#v\n",
-				tree,
-				keyDefinition,
-				valueDefinition,
+			slog.Error("no iterable implicit node can have more than 2 children",
+				"tree", tree,
+				"key", keyDefinition,
+				"value", valueDefinition,
 			)
 			panic("no iterable implicit node can have more than 2 children")
 		}
@@ -323,10 +324,13 @@ func insertIterableIntoImplicitTypeNode(
 
 		value := tree.children["value"]
 		if value == nil {
-			log.Printf(
-				"inferred iterable cannot exist without a 'value' node in its type definition"+"\n tree = %#v\n key = %#v\n value = %#v\n",
+			slog.Error(
+				"inferred iterable cannot exist without a 'value' node in its type definition",
+				"tree",
 				tree,
+				"key",
 				keyDefinition,
+				"value",
 				valueDefinition,
 			)
 			panic(

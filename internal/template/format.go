@@ -211,9 +211,10 @@ func Format(source []byte, opts FormatOptions) []byte {
 		}
 
 		// After indenting: if we restored for a template keyword, set the
-		// post-indent level; otherwise apply normal HTML after delta.
+		// post-indent level plus any HTML delta from the current line;
+		// otherwise apply normal HTML after delta.
 		if hasRestore {
-			level = postLevel
+			level = postLevel + before + after
 		} else {
 			level += after
 			if level < 0 {

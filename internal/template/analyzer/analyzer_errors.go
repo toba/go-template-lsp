@@ -45,8 +45,8 @@ func remapRangeFromCommentGoCodeToSource(
 
 	if rangeRemaped.End.Line > boundary.End.Line {
 		// msg := "boundary.End.Line = %d ::: rangeRemaped.End.Line = %d\n"
-		// log.Printf(msg, boundary.End.Line, rangeRemaped.End.Line)
-		// log.Printf("boundary.End.Line = %d ::: rangeRemaped.End.Line = %d\n", boundary.End.Line, rangeRemaped.End.Line)
+		// slog.Error(msg, boundary.End.Line, rangeRemaped.End.Line)
+		// slog.Error("boundary.End.Line = %d ::: rangeRemaped.End.Line = %d\n", boundary.End.Line, rangeRemaped.End.Line)
 
 		rangeRemaped.End.Line = boundary.End.Line
 		// panic("remaped range cannot excede the comment GoCode boundary")
@@ -140,7 +140,7 @@ func convertThirdPartiesParseErrorToLocalError(
 	// 1. convert parse error from go/ast.Error to lexer.Error, and adjust the 'Range'
 
 	if parseError != nil {
-		// log.Println("comment scanner error found, ", parseError)
+		// slog.Error("comment scanner error found, ", parseError)
 
 		errorList, ok := errors.AsType[scanner.ErrorList](parseError)
 		if !ok {
@@ -160,7 +160,7 @@ func convertThirdPartiesParseErrorToLocalError(
 				parseErr.Range,
 			)
 
-			// log.Println("comment scanner error :: ", parseErr)
+			// slog.Error("comment scanner error :: ", parseErr)
 
 			errs = append(errs, parseErr)
 		}

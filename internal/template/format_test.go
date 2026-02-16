@@ -773,6 +773,44 @@ Booked<br/>On
 {{end}}`,
 		},
 		{
+			name: "end with closing HTML tag on same line preserves level",
+			input: `<article>
+<section>
+<dl>
+<dt>Label</dt>
+<dd>Value</dd>
+{{- if .Condition -}}
+<dt>Extra</dt>
+<dd>{{if .Inner}}
+<a href="/link">Text</a>
+{{else}}Nobody{{end}}</dd>
+{{- end}}
+</dl>
+</section>
+<section>
+<p>next</p>
+</section>
+</article>`,
+			opts: FormatOptions{TabSize: 3, InsertSpaces: true},
+			expected: `<article>
+   <section>
+      <dl>
+         <dt>Label</dt>
+         <dd>Value</dd>
+         {{- if .Condition -}}
+         <dt>Extra</dt>
+         <dd>{{if .Inner}}
+            <a href="/link">Text</a>
+         {{else}}Nobody{{end}}</dd>
+         {{- end}}
+      </dl>
+   </section>
+   <section>
+      <p>next</p>
+   </section>
+</article>`,
+		},
+		{
 			name:  "default opts no wrapping",
 			input: `<button type="button" class="map-zoom-btn" title="Expand">`,
 			// PrintWidth defaults to 0, so no wrapping

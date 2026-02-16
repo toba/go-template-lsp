@@ -3,7 +3,7 @@ package analyzer
 import (
 	"errors"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
@@ -151,20 +151,25 @@ func (h *WorkspaceTemplateManager) BuildWorkspaceTemplateDefinition(
 
 	// error checking
 	if len(handler.TemplateToFileName) != len(handler.TemplateToDefinition) {
-		log.Printf("length mismatch between template existing and template analyzed\n"+
-			" handler.TemplateToFileName = %#v\n handler.TemplateToDefinition = %#v\n", handler.TemplateToFileName, handler.TemplateToDefinition)
+		slog.Error("length mismatch between template existing and template analyzed",
+			"handler.TemplateToFileName", handler.TemplateToFileName,
+			"handler.TemplateToDefinition", handler.TemplateToDefinition,
+		)
 		panic("length mismatch between template existing and template analyzed")
 	}
 
 	if len(handler.TemplateVisited) != len(handler.TemplateToDefinition) {
-		log.Printf(
-			"all template visited in the workspace should have a 'TemplateDefinition'\n"+
-				" len(templateVisited) = %d\n len(TemplateToDefinition) = %d\n templateVisited = %#v\n TemplateToDefinition = %#v\n",
+		slog.Error(
+			"all template visited in the workspace should have a 'TemplateDefinition'",
+			"len(templateVisited)",
 			len(
 				handler.TemplateVisited,
 			),
+			"len(TemplateToDefinition)",
 			len(handler.TemplateToDefinition),
+			"templateVisited",
 			handler.TemplateVisited,
+			"TemplateToDefinition",
 			handler.TemplateToDefinition,
 		)
 		panic("all template visited in the workspace should have a 'TemplateDefinition'")
@@ -299,8 +304,11 @@ func NewTemplateBuilder(
 
 		for templateName, template := range root.ShortCut.TemplateDefined {
 			if !template.IsTemplate() {
-				log.Printf("expected a template but found something else\n"+
-					"GroupStatementNode = %s\n", template)
+				slog.Error(
+					"expected a template but found something else",
+					"GroupStatementNode",
+					template,
+				)
 				panic("expected a template but found something else")
 			}
 
@@ -321,10 +329,11 @@ func NewTemplateBuilder(
 					)
 
 				if templateFound != template {
-					log.Printf(
-						"weirdly enough 'templateFound' is not similar to any 'template' available into the parent"+
-							"\n templateFound = %#v \n template = %#v\n",
+					slog.Error(
+						"weirdly enough 'templateFound' is not similar to any 'template' available into the parent",
+						"templateFound",
 						templateFound,
+						"template",
 						template,
 					)
 					panic(
@@ -379,10 +388,11 @@ func NewTemplateBuilder(
 	) != len(
 		parsedFilesInWorkspace,
 	) {
-		log.Printf(
-			"size mismatch between 'AnalyzedDefinedTemplatesWithinFile' and the available file in the workspace ! All of them must be partially analyzed at the start\n"+
-				" len(AnalyzedDefinedTemplatesWithinFile) = %d\n len(parsedFilesInWorkspace) = %d\n",
+		slog.Error(
+			"size mismatch between 'AnalyzedDefinedTemplatesWithinFile' and the available file in the workspace ! All of them must be partially analyzed at the start",
+			"len(AnalyzedDefinedTemplatesWithinFile)",
 			len(handler.templateManager.AnalyzedDefinedTemplatesWithinFile),
+			"len(parsedFilesInWorkspace)",
 			len(parsedFilesInWorkspace),
 		)
 		panic(
@@ -391,10 +401,11 @@ func NewTemplateBuilder(
 	}
 
 	if len(handler.TemplateVisited) != len(handler.TemplateToFileName) {
-		log.Printf(
-			"size of template to visit must be equal to all the available template in the workspace\n"+
-				" len(TemplateVisited) = %d\n len(handler.TemplateToFileName) = %d\n",
+		slog.Error(
+			"size of template to visit must be equal to all the available template in the workspace",
+			"len(TemplateVisited)",
 			len(handler.TemplateVisited),
+			"len(handler.TemplateToFileName)",
 			len(handler.TemplateToFileName),
 		)
 		panic(
@@ -448,17 +459,17 @@ func (h *workspaceTemplateBuilder) markCallPathAsCyclicalError(
 	sizeCallStack := len(h.callerStack)
 
 	if len(h.callerStack) != len(h.callPath) {
-		log.Printf(
-			"length mismatch between 'callerStack' and 'callPath'\n callPath = %#v\n callerStack = %#v",
-			h.callPath,
-			h.callerStack,
+		slog.Error("length mismatch between 'callerStack' and 'callPath'",
+			"callPath", h.callPath,
+			"callerStack", h.callerStack,
 		)
 		panic("length mismatch between 'callerStack' and 'callPath'")
 	}
 
 	if sizeCallStack < 1 {
-		log.Println(
-			"cyclical call with less element than expect. callPath = ",
+		slog.Error(
+			"cyclical call with less element than expect. callPath =",
+			"callPath",
 			h.callPath,
 		)
 		panic(
@@ -483,9 +494,11 @@ func (h *workspaceTemplateBuilder) markCallPathAsCyclicalError(
 	}
 
 	if !foundCollidingTemplate {
-		log.Printf("caller said there is template name collision, "+
-			"but 'cyclical' detector was unable to find it\n"+
-			"handler = %#v\n", h)
+		slog.Error(
+			"caller said there is template name collision, but 'cyclical' detector was unable to find it",
+			"handler",
+			h,
+		)
 		panic(
 			"caller said there is template name collision, but 'cyclical' detector was unable to find it",
 		)
@@ -594,19 +607,17 @@ func (h *workspaceTemplateBuilder) BuildTemplateDefinition(
 	templateName string,
 ) *TemplateDefinition {
 	if templateScope == nil {
-		log.Printf("template to investigate is <nil>\n handler = %#v\n", h)
+		slog.Error("template to investigate is <nil>", "handler", h)
 		panic("template to investigate is <nil>")
 	}
 
 	// DEBUG
 	//
-	log.Printf("=> special template name = %s\n\n", templateScope.TemplateName())
+	slog.Debug("=> special template", "name", templateScope.TemplateName())
 	for _, templateName := range templateScope.ShortCut.TemplateCallUsed {
-		log.Printf("--> call to :: %s\n", templateName)
+		slog.Debug("--> call to", "to", templateName)
 	}
 
-	log.Println()
-	log.Println()
 	//
 	// END DEBUG
 
@@ -687,9 +698,9 @@ func (h *workspaceTemplateBuilder) BuildTemplateDefinition(
 		if h.TemplateVisited[templateFound] {
 			def := h.TemplateToDefinition[templateFound]
 			if def == nil {
-				log.Printf(
-					"during template dependency analysis, a visited template cannot have a <nil> 'TemplateDefinition'\n"+
-						"template in question = %#v\n",
+				slog.Error(
+					"during template dependency analysis, a visited template cannot have a <nil> 'TemplateDefinition'",
+					"question",
 					templateFound,
 				)
 				panic(
@@ -735,11 +746,13 @@ func (h *workspaceTemplateBuilder) BuildTemplateDefinition(
 
 	file := h.templateManager.AnalyzedDefinedTemplatesWithinFile[fileName].PartialFile
 	if file == nil {
-		log.Printf(
-			"template dependency analyzer was unable to find the partial file definition for %s\n"+
-				" templateName = %s\n templateScope = %#v\n",
+		slog.Error(
+			"template dependency analyzer was unable to find the partial file definition for",
+			"for",
 			fileName,
+			"templateName",
 			templateName,
+			"templateScope",
 			templateScope,
 		)
 		panic(
@@ -789,10 +802,11 @@ func (h *workspaceTemplateBuilder) increaseDepth(
 	templateNameToVisit string,
 ) {
 	if len(h.callerStack) > h.maxDepth {
-		log.Printf(
-			"max depth reached during depencies analysis of 'TemplateStatementNode'\n "+
-				"h.callerStack = %#v\n handler = %#v\n",
+		slog.Error(
+			"max depth reached during depencies analysis of 'TemplateStatementNode'",
+			"h.callerStack",
 			h.callerStack,
+			"handler",
 			h,
 		)
 		panic("max depth reached during depencies analysis of 'TemplateStatementNode'")
@@ -812,10 +826,11 @@ func (h *workspaceTemplateBuilder) decreaseDepth() {
 	size := len(h.callerStack)
 
 	if size == 0 {
-		log.Printf(
-			"no more element to unwind from the caller stack during depencies analysis for 'TemplateStatementNode'\n"+
-				"size = %d\n handler = %#v\n",
+		slog.Error(
+			"no more element to unwind from the caller stack during depencies analysis for 'TemplateStatementNode'",
+			"size",
 			size,
+			"handler",
 			h,
 		)
 		panic(

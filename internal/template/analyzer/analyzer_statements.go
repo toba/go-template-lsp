@@ -8,7 +8,7 @@ import (
 	goParser "go/parser"
 	"go/token"
 	"go/types"
-	"log"
+	"log/slog"
 	"maps"
 	"strconv"
 
@@ -38,8 +38,9 @@ func analyzeGroupStatementHeader(
 		}
 
 		if group.ControlFlow == nil {
-			log.Printf(
-				"fatal, 'controlFlow' not found for 'GroupStatementNode'. \n %s \n",
+			slog.Error(
+				"fatal, 'controlFlow' not found for 'GroupStatementNode'",
+				"group",
 				group,
 			)
 			panic(
@@ -552,10 +553,9 @@ func definitionAnalysisGroupStatement(
 
 				expectedValueNode := exprTree.children["value"]
 				if expectedValueNode == nil {
-					log.Printf(
-						"found <nil> value within iterable 'value'.\n exprTree = %#v\n recheck = %#v\n",
-						exprTree,
-						recheck,
+					slog.Error("found <nil> value within iterable 'value'",
+						"exprTree", exprTree,
+						"recheck", recheck,
 					)
 					panic("found <nil> value within iterable 'value'")
 				}

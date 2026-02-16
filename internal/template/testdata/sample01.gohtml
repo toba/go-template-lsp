@@ -20,37 +20,31 @@
          <span>Ask Lasso</span>
       </button>
 
-      <a href="/portfolio/{{.PortfolioID}}"
-         {{if eq .Page "portfolios"}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}" {{if eq .Page "portfolios"}}aria-current="page"{{end}}>
          <span class="icon icon-layout-dashboard"></span>
          <span>Dashboard</span>
       </a>
 
       <h2>Units</h2>
-      <a href="/portfolio/{{.PortfolioID}}/unit-search"
-         {{if and (eq .Page "units") .PortfolioID}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}/unit-search" {{if and (eq .Page "units") .PortfolioID}}aria-current="page"{{end}}>
          <span class="icon icon-building-2"></span>
          <span>Search</span>
       </a>
-      <a href="/portfolio/{{.PortfolioID}}/unit-history"
-         {{if and (eq .Page "history") .PortfolioID}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}/unit-history" {{if and (eq .Page "history") .PortfolioID}}aria-current="page"{{end}}>
          <span class="icon icon-history"></span>
          <span>History</span>
       </a>
 
       <h2>Reservations</h2>
-      <a href="/portfolio/{{.PortfolioID}}/res-trends"
-         {{if eq .Page "res-trends"}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}/res-trends" {{if eq .Page "res-trends"}}aria-current="page"{{end}}>
          <span class="icon icon-chart-no-axes-combined"></span>
          <span>Trends</span>
       </a>
-      <a href="/portfolio/{{.PortfolioID}}/res-search"
-         {{if eq .Page "res-search"}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}/res-search" {{if eq .Page "res-search"}}aria-current="page"{{end}}>
          <span class="icon icon-calendar-search"></span>
          <span>Search</span>
       </a>
-      <a href="/portfolio/{{.PortfolioID}}/res-grid"
-         {{if eq .Page "res-grid"}}aria-current="page"{{end}}>
+      <a href="/portfolio/{{.PortfolioID}}/res-grid" {{if eq .Page "res-grid"}}aria-current="page"{{end}}>
          <span class="icon icon-calendar-range"></span>
          <span>Calendar</span>
       </a>
@@ -61,15 +55,15 @@
    <menu hx-boost:inherited="true" hx-target:inherited="main" hx-swap:inherited="innerHTML" hx-push-url:inherited="true">
       {{- if .User.IsAdmin -}}
       <li><a href="/job"
-         {{if eq .ActiveMenu "job"}}aria-current="page"{{end}}>
-         <span class="icon icon-clipboard-check"></span>
-         <span>Scheduled Jobs</span>
+            {{if eq .ActiveMenu "job"}}aria-current="page"{{end}}>
+            <span class="icon icon-clipboard-check"></span>
+            <span>Scheduled Jobs</span>
       </a></li>
       {{- end -}}
       <li><a href="/user"
-         {{if eq .ActiveMenu "users"}}aria-current="page"{{end}}>
-         <span class="icon icon-users"></span>
-         <span>Staff</span>
+            {{if eq .ActiveMenu "users"}}aria-current="page"{{end}}>
+            <span class="icon icon-users"></span>
+            <span>Staff</span>
       </a></li>
    {{- end -}}
    </menu>
@@ -77,10 +71,7 @@
    {{- if .MapUnits}}
    <section id="sidebar-map">
       <div id="portfolio-map"></div>
-      <button type="button" class="map-zoom-btn" title="Expand map"
-         hx-get="/portfolio/{{.PortfolioID}}/map"
-         hx-target="#modal-container"
-         hx-swap="innerHTML">
+      <button type="button" class="map-zoom-btn" title="Expand map" hx-get="/portfolio/{{.PortfolioID}}/map" hx-target="#modal-container" hx-swap="innerHTML">
          <span class="icon icon-expand"></span>
       </button>
    </section>
@@ -89,9 +80,7 @@
 
    {{if .IsImpersonating -}}
    <footer class="impersonate">
-      <button type="button" title="End impersonation"
-         hx-post="/impersonate/stop"
-         hx-swap="none">
+      <button type="button" title="End impersonation" hx-post="/impersonate/stop" hx-swap="none">
          <span class="icon icon-x"></span>
          <span class="icon icon-venetian-mask"></span>
          <span class="user-name">Viewing as {{.User.Name}}</span>

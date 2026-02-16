@@ -3,7 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
@@ -24,9 +24,9 @@ func FindSourceDefinitionFromPosition(
 	// 1. Find the node and token corresponding to the provided position
 	seeker := &findAstNodeRelatedToPosition{Position: position, fileName: file.name}
 
-	log.Println("position before walker: ", position)
+	slog.Error("position before walker:", "position", position)
 	parser.Walk(seeker, file.root)
-	log.Printf("seeker after walker : %#v\n", seeker)
+	slog.Error("seeker after walker", "walker", seeker)
 
 	if seeker.TokenFound == nil { // No definition found
 		return nil
@@ -77,8 +77,9 @@ func FindSourceDefinitionFromPosition(
 			seeker.TokenFound,
 		)
 		if errSplit != nil {
-			log.Printf(
-				"warning, spliting variable name was unsuccessful :: varName = %s\n",
+			slog.Error(
+				"warning, spliting variable name was unsuccessful",
+				"varName",
 				string(seeker.TokenFound.Value),
 			)
 			singleDefinition := []NodeDefinition{invalidVariableDefinition}
@@ -141,9 +142,9 @@ func FindSourceDefinitionFromPosition(
 
 		newVarName, err := joinVariableNameFields(fields[:fieldIndex+1])
 		if err != nil {
-			log.Printf(
-				"variable name was split successfully, but now cannot be joined for some reason"+
-					"\n fields = %q\n",
+			slog.Error(
+				"variable name was split successfully, but now cannot be joined for some reason",
+				"fields",
 				fields,
 			)
 			panic(
@@ -167,8 +168,10 @@ func FindSourceDefinitionFromPosition(
 
 		typ, err := getRealTypeAssociatedToVariable(newToken, temporaryVariableDef)
 		if err != nil {
-			log.Printf("error while analysis variable chain :: "+err.String()+
-				"\n\n associated type = %s\n", typ)
+			slog.Error("error while analysis variable chain",
+				"error", err.String(),
+				"type", typ,
+			)
 		}
 
 		variableDef = NewVariableDefinition(
@@ -435,11 +438,13 @@ func GoToDefinition(
 	isTemplate bool,
 ) (fileName string, defFound parser.AstNode, reach lexer.Range) {
 	if file == nil {
-		log.Printf(
-			"File definition not found to compute Go-To Definition. Thus cannot find definition of node."+
-				"parentScope = %s\n parentNodeStatement = %s \n from = %s\n",
+		slog.Error(
+			"File definition not found to compute Go-To Definition. Thus cannot find definition of node",
+			"node.parentScope",
 			parentScope,
+			"parentNodeStatement",
 			parentNodeStatement,
+			"from",
 			from,
 		)
 		panic(

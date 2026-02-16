@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go/types"
-	"log"
+	"log/slog"
 	"reflect"
 	"strings"
 
@@ -147,12 +147,11 @@ func splitVariableNameFields(
 	for {
 		counter++
 		if counter > 1000 {
-			log.Printf(
-				"current variableName = %s \n fields = %q \n err = %#v \n index = %d",
-				variableName,
-				fields,
-				err,
-				index,
+			slog.Error("current",
+				"variableName", variableName,
+				"fields", fields,
+				"err", err,
+				"index", index,
 			)
 			panic("infinite loop detected while spliting variableName")
 		}
@@ -327,10 +326,7 @@ func getRealTypeAssociatedToVariable(
 	for i := 1; i < len(fields); i++ {
 		count++
 		if count > 100 {
-			log.Printf(
-				"infinite loop detected while analyzing fields.\n fields = %q",
-				fields,
-			)
+			slog.Error("infinite loop detected while analyzing fields", "fields", fields)
 			panic("infinite loop detected while analyzing fields")
 		}
 
@@ -342,9 +338,16 @@ func getRealTypeAssociatedToVariable(
 		// of the variable without a check
 		switch t := parentType.(type) {
 		default:
-			log.Printf("parentType = %#v \n reflec.TypeOf(parentType) = %s\n"+
-				" fields.index = %d ::: fields = %q",
-				parentType, reflect.TypeOf(parentType), i, fields,
+			slog.Error(
+				"parentType =    reflec.TypeOf(parentType) =   fields.index =  ::: fields =",
+				"parentType",
+				parentType,
+				"reflec.TypeOf(parentType)",
+				reflect.TypeOf(parentType),
+				"fields.index",
+				i,
+				"fields",
+				fields,
 			)
 			panic("parentType not recognized")
 
@@ -564,8 +567,9 @@ func getRealTypeAssociatedToVariable(
 	}
 
 	if parentType == nil {
-		log.Printf(
-			"parent type not found (parentType == nil).\n variable = %s",
+		slog.Error(
+			"parent type not found (parentType == nil)",
+			"variable",
 			string(variable.Value),
 		)
 		panic("parent type not found")
@@ -590,10 +594,7 @@ func updateVariableImplicitType(
 	symbolType types.Type,
 ) (types.Type, *parser.ParseError) {
 	if symbol == nil {
-		log.Printf(
-			"cannot set implicit type of not existing symbol.\n varDef = %#v",
-			varDef,
-		)
+		slog.Error("cannot set implicit type of not existing symbol", "varDef", varDef)
 		panic("cannot set implicit type of not existing symbol")
 	}
 
@@ -646,8 +647,10 @@ func updateVariableImplicitType(
 	// only traverse to the last field in varName
 	for index := range len(fields) - 1 {
 		if currentNode == nil {
-			log.Printf("an existing/created 'implicitTypeNode' cannot be also <nil>"+
-				"\n fields = %q\n symbolType = %s\n", fields, symbolType)
+			slog.Error("an existing/created 'implicitTypeNode' cannot be also <nil>",
+				"fields", fields,
+				"symbolType", symbolType,
+			)
 			panic("an existing/created 'implicitTypeNode' cannot be also <nil>")
 		}
 

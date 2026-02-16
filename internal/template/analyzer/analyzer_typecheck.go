@@ -3,7 +3,7 @@ package analyzer
 import (
 	"errors"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 	"github.com/toba/go-template-lsp/internal/template/parser"
@@ -59,8 +59,10 @@ func makeExpressionTypeCheck(
 	nodeRange lexer.Range,
 ) (resultType [2]types.Type, variablesToRecheck []*collectionPostCheckImplicitTypeNode, errs []*parser.ParseError) {
 	if len(symbols) != len(typs) {
-		log.Printf("every symbol must have a single type."+
-			"\n symbols = %q\n typs = %q", symbols, typs)
+		slog.Error("every symbol must have a single type",
+			"symbols", symbols,
+			"typs", typs,
+		)
 		panic("every symbol must have a single type")
 	}
 

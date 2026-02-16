@@ -4,7 +4,7 @@ package analyzer
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 )
 
 type TypeKind int
@@ -135,7 +135,10 @@ func typeChecker(first, second any) (TypeKind, error) {
 		panic("helper type should not be used in the type checker, " + first.Kind().String())
 
 	default:
-		log.Printf("type checker found unknown type:\n first = %#v\n second = %#v\n", first, second)
+		slog.Error("type checker found unknown type",
+			"first", first,
+			"second", second,
+		)
 		panic("unknown type")
 	}
 

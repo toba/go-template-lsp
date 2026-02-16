@@ -3,7 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"go/types"
-	"log"
+	"log/slog"
 	"strconv"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
@@ -35,8 +35,9 @@ func definitionAnalysisMultiExpression(
 
 	for count, expression := range node.Expressions {
 		if expression == nil {
-			log.Printf(
-				"fatal, nil element within expression list for MultiExpressionNode. \n %s \n",
+			slog.Error(
+				"fatal, nil element within expression list for MultiExpressionNode",
+				"MultiExpressionNode.",
 				node.String(),
 			)
 			panic(
@@ -150,11 +151,10 @@ func definitionAnalysisExpression(
 	)
 
 	if expressionType[0] == nil {
-		log.Printf(
-			"found a <nil> return type for expression"+"\n file = %#v\n node = %#v\n inferences = %#v\n",
-			file,
-			node,
-			inferences,
+		slog.Error("found a <nil> return type for expression",
+			"file", file,
+			"node", node,
+			"inferences", inferences,
 		)
 		panic("found a <nil> return type for expression")
 	}
@@ -260,7 +260,7 @@ func (p *definitionAnalyzer) makeSymboleDefinitionAnalysis(
 
 	for p.isTokenAvailable() {
 		if count > 100 {
-			log.Printf("loop took too long to complete.\n analyzer = %s\n", p)
+			slog.Error("loop took too long to complete", "analyzer", p)
 			panic("loop lasted more than expected on 'expression definition analysis'")
 		}
 

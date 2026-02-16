@@ -4,6 +4,4 @@
 
 [tools]
 go = "1.26.0"
-"github:hmans/beans" = "latest"
-"github:STR-Consulting/bean-me-up" = "latest"
 golangci-lint = "2.8"

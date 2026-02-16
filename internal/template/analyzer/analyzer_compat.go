@@ -3,7 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"go/types"
-	"log"
+	"log/slog"
 
 	"github.com/toba/go-template-lsp/internal/template/lexer"
 )
@@ -82,7 +82,7 @@ func TypeCheckCompatibilityWithConstraint(
 
 func convertTypeToImplicitType(sourceType types.Type) *nodeImplicitType {
 	if sourceType == nil {
-		log.Printf("unable to convert <nil> type to an implicit type tree")
+		slog.Error("unable to convert <nil> type to an implicit type tree")
 		panic("unable to convert <nil> type to an implicit type tree")
 	}
 
