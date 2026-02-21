@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-01T18:40:44Z
 updated_at: 2026-02-01T18:43:13Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jv
 ---
 
 The formatter compounds indentation from both HTML tags and template actions (define/range/if/with/block/end). Template actions should NOT contribute to the indent level — only HTML nesting should drive indentation. Template actions should be indented at the current HTML-determined level but not push it further.

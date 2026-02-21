@@ -6,6 +6,10 @@ type: feature
 priority: normal
 created_at: 2026-02-08T16:30:43Z
 updated_at: 2026-02-08T16:32:10Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17k5
 ---
 
 Implement the textDocument/documentLink LSP method so that hyphenated template names like "logo-particles" are treated as a single clickable link, overriding the editor's word-boundary detection that splits at hyphens.

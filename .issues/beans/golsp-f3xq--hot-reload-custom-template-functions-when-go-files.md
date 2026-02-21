@@ -6,6 +6,10 @@ type: feature
 priority: normal
 created_at: 2026-02-06T18:31:47Z
 updated_at: 2026-02-06T18:37:32Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jf
 ---
 
 Use LSP file watching (client/registerCapability + workspace/didChangeWatchedFiles) to re-scan Go files for FuncMap definitions when they change, then re-analyze templates automatically.

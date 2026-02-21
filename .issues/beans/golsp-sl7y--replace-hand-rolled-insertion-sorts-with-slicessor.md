@@ -6,6 +6,10 @@ type: task
 priority: normal
 created_at: 2026-02-08T17:00:28Z
 updated_at: 2026-02-08T17:02:39Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:26Z"
+        task_id: 868hk17ka
 ---
 
 Four insertion sort implementations should use slices.SortFunc instead:

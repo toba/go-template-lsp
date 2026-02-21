@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-01T19:42:49Z
 updated_at: 2026-02-01T19:45:17Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jz
 ---
 
 In overflow attrWrapMode, once an attribute overflows the printWidth, all remaining attributes are placed one-per-line. Instead, remaining attributes should be packed onto continuation lines, fitting as many as possible per line before wrapping again.

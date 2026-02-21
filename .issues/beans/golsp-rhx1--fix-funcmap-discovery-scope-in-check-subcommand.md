@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-08T17:42:40Z
 updated_at: 2026-02-08T17:45:51Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jp
 ---
 
 The check subcommand scans for FuncMap definitions in the same directory it scans for templates. When templates live in a subdirectory but FuncMap definitions are elsewhere in the module, the scanner misses them — producing false 'function undefined' errors. Fix: scan for FuncMaps at the Go module root (walk up to find go.mod), not at the template directory. Also add -funcs flag as escape hatch.

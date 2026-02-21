@@ -6,6 +6,10 @@ type: feature
 priority: normal
 created_at: 2026-02-08T16:28:03Z
 updated_at: 2026-02-08T16:32:41Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17ju
 ---
 
 Add a `check` subcommand that runs the same diagnostic pipeline as the LSP server and outputs errors to stdout for CI/CD and agents.

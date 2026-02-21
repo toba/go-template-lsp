@@ -1,0 +1,77 @@
+upstream:
+    sources:
+        - repo: yayolande/gota
+          branch: master
+          relationship: '`internal/template/` — parser, lexer, analyzer, template logic'
+          last_checked_sha: 46acdb27bc3801e1b13bad8809f708d96e00428c
+          last_checked_date: "2026-02-21T04:23:12Z"
+          paths:
+            high:
+                - analyzer.go
+                - parser/**
+                - lexer/**
+                - template.go
+            medium:
+                - go.mod
+                - go.sum
+                - '*_test.go'
+            low:
+                - .github/**
+                - README.md
+                - LICENSE
+        - repo: yayolande/go-template-lsp
+          branch: master
+          relationship: '`cmd/go-template-lsp/` — lsp server architecture, methods, parsing'
+          last_checked_sha: e79b308f1c0e1a0f7b8e4ae79d94eb3eaa631d4c
+          last_checked_date: "2026-02-21T04:23:12Z"
+          paths:
+            high:
+                - lsp/**
+                - main.go
+            medium:
+                - go.mod
+                - go.sum
+                - '*_test.go'
+            low:
+                - .github/**
+                - README.md
+                - LICENSE
+                - .gitignore
+todo:
+    default_status: draft
+    default_type: task
+    path: .issues
+    sync:
+        clickup:
+            custom_fields:
+                bean_id: a0b0c69a-d036-4031-9deb-4ecc4cfa3e55
+                created_at: d3adc5e1-eedf-46e0-b5d5-a4dce3a0666b
+            list_id: "901112937048"
+            status_mapping:
+                completed: completed
+                draft: not started
+                in-progress: in progress
+                ready: not started
+                scrapped: completed
+            type_mapping:
+                bug: 1001
+                epic: 1002
+                feature: 0
+                milestone: 1
+                task: 0
+companions:
+    zed: toba/gozer
+nope:
+    rules:
+        - name: git-no-verify
+          pattern: 'git\s+.*--no-verify'
+          message: "--no-verify is never allowed - fix the issue that's failing the hook instead"
+        - name: git-checkout-switch
+          pattern: 'git\s+(checkout|switch)\s+'
+          message: "git checkout/switch not allowed - branch changes require user approval"
+        - name: git-commit-push
+          pattern: 'git\s+(commit|push)'
+          message: "git commit/push not allowed - only user should commit"
+        - name: todo-archive
+          pattern: 'todo\s+archive'
+          message: "todo archive not allowed - user must archive todos manually"

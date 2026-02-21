@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-03T00:03:09Z
 updated_at: 2026-02-08T17:24:04Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17k4
 ---
 
 When {{if ...}}<p>...</p>{{end}} appears on a single line, ends pop from blockStack before opens push, consuming an outer block's entry and leaving an orphaned entry. Fix by cancelling matched open/end pairs on the same line before stack processing.

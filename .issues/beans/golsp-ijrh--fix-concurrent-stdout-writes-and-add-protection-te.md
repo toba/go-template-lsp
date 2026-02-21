@@ -6,6 +6,10 @@ type: bug
 priority: high
 created_at: 2026-02-02T16:51:37Z
 updated_at: 2026-02-02T16:57:40Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17kb
 ---
 
 The main goroutine and diagnostic goroutine both call `lsp.SendToLspClient(os.Stdout, ...)` without synchronization, which can corrupt the LSP Content-Length framing and cause the editor to report broken pipe errors.

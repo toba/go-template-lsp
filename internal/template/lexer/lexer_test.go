@@ -1014,3 +1014,4 @@ func TestTokenize_FunctionWithKeywordPrefix(t *testing.T) {
 		})
 	}
 }
+

@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-01T19:37:00Z
 updated_at: 2026-02-02T16:55:22Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jw
 ---
 
 When an element has an attribute that exceeds printWidth and will STILL exceed printWidth even on its own line, don't bother reformatting. Example with printWidth 100:

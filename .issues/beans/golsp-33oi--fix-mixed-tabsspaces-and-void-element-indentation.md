@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-01T18:48:36Z
 updated_at: 2026-02-01T18:58:00Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17kc
 ---
 
 Two formatting issues reported:

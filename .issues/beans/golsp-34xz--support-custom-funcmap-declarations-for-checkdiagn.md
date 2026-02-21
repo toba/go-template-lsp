@@ -6,6 +6,10 @@ type: feature
 priority: normal
 created_at: 2026-02-08T17:19:41Z
 updated_at: 2026-02-08T17:24:24Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jt
 ---
 
 The `check` subcommand (and LSP diagnostics) report false-positive **"function undefined"** and **"only functions and methods accept arguments"** errors for custom Go template FuncMap functions (e.g. `asset`, `timehtml`, custom helpers).

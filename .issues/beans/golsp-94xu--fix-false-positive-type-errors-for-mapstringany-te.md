@@ -6,6 +6,10 @@ type: bug
 priority: normal
 created_at: 2026-02-08T18:13:47Z
 updated_at: 2026-02-08T18:17:42Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17jq
 ---
 
 The check subcommand reports false positives on projects using map[string]any as template data. Two bugs: (1) map field access is blocked in getRealTypeAssociatedToVariable, (2) strict implicit type compatibility requires ALL fields to exist.

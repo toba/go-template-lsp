@@ -6,6 +6,10 @@ type: bug
 priority: high
 created_at: 2026-02-01T19:25:45Z
 updated_at: 2026-02-01T19:27:36Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17k1
 ---
 
 ## Problem

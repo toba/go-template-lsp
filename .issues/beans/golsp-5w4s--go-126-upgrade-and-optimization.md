@@ -6,6 +6,10 @@ type: task
 priority: normal
 created_at: 2026-02-12T17:30:22Z
 updated_at: 2026-02-12T17:50:57Z
+sync:
+    clickup:
+        synced_at: "2026-02-21T04:27:25Z"
+        task_id: 868hk17k9
 ---
 
 Upgrade project to Go 1.26 and apply optimization findings from goptimize analysis.
