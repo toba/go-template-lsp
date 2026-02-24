@@ -1057,9 +1057,9 @@ func ProcessFormattingRequest(
 			responseData, _ := json.Marshal(res)
 			return responseData, fileName
 		}
-		fileContent, err = os.ReadFile(parsed.Path)
+		fileContent, err = os.ReadFile(parsed.Path) //nolint:gosec // path comes from editor URI
 		if err != nil {
-			slog.Warn("Cannot read file for formatting: " + err.Error())
+			slog.Warn("Cannot read file for formatting: " + err.Error()) //nolint:gosec // error context only
 			responseData, _ := json.Marshal(res)
 			return responseData, fileName
 		}

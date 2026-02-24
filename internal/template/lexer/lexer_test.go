@@ -166,7 +166,7 @@ func TestTokenizeLine_Variables(t *testing.T) {
 			tokenID:  DotVariable,
 			tokenVal: ".",
 		},
-		{
+		{ //nolint:gosec // test data, not credentials
 			name:     "chained dot variable",
 			source:   "{{ .Field.SubField }}",
 			tokenID:  DotVariable,
@@ -1014,4 +1014,3 @@ func TestTokenize_FunctionWithKeywordPrefix(t *testing.T) {
 		})
 	}
 }
-

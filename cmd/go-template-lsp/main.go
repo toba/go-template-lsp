@@ -317,7 +317,7 @@ func main() {
 
 	if scanner.Err() != nil {
 		msg := "error while closing LSP: " + scanner.Err().Error()
-		slog.Error(msg)
+		slog.Error(msg) //nolint:gosec // error context only
 		panic(msg)
 	}
 }
@@ -345,7 +345,7 @@ func insertTextDocumentToDiagnostic(
 
 	if len(textChangedNotification) >= 2 {
 		msg := "'textChangedNotification' channel size should never exceed 1"
-		slog.Error(msg,
+		slog.Error(msg, //nolint:gosec // internal diagnostic
 			slog.Group("error_details",
 				slog.String("uri_file_to_diagnostic", uri),
 				slog.Any("files_waiting_processing", mapToKeys(textFromClient)),
