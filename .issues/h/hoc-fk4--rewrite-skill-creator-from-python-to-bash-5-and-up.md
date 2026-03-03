@@ -8,7 +8,7 @@ created_at: 2026-02-21T04:22:16Z
 updated_at: 2026-02-21T04:28:12Z
 sync:
     clickup:
-        synced_at: "2026-02-21T04:27:25Z"
+        synced_at: "2026-02-24T18:17:20Z"
         task_id: 868hk17jj
 ---
 
