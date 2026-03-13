@@ -665,3 +665,74 @@ func TestRealWorldTemplatePatterns(t *testing.T) {
 		})
 	}
 }
+
+// TestNilAsTemplateArgument verifies that nil is accepted as a valid argument
+// in template function calls (e.g., {{myFunc .Page "name" nil true false}}).
+func TestNilAsTemplateArgument(t *testing.T) {
+	customFuncs := map[string]*tmpl.FunctionDefinition{
+		"linkTo": analyzer.NewCustomFunctionDefinition(
+			"linkTo",
+			"test.go",
+			lexer.Range{},
+		),
+	}
+	tmpl.SetWorkspaceCustomFunctions(customFuncs)
+	defer tmpl.SetWorkspaceCustomFunctions(nil)
+
+	tests := []struct {
+		name            string
+		template        string
+		forbiddenErrors []string
+	}{
+		{
+			name:            "nil as argument to custom function",
+			template:        `{{linkTo .Page "portfolio-list" nil false false}}`,
+			forbiddenErrors: []string{"undefined", "type mismatch"},
+		},
+		{
+			name:            "nil as argument to builtin and",
+			template:        `{{and nil .Value}}`,
+			forbiddenErrors: []string{"undefined", "type mismatch"},
+		},
+		{
+			name:            "nil as argument to builtin or",
+			template:        `{{or .Value nil}}`,
+			forbiddenErrors: []string{"undefined", "type mismatch"},
+		},
+		{
+			name:            "nil as argument to builtin eq",
+			template:        `{{eq .Value nil}}`,
+			forbiddenErrors: []string{"undefined", "type mismatch"},
+		},
+		{
+			name:            "nil in print",
+			template:        `{{print nil}}`,
+			forbiddenErrors: []string{"undefined", "type mismatch"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			parseTree, _ := tmpl.ParseSingleFile([]byte(tc.template))
+			parsedFiles := map[string]*parser.GroupStatementNode{
+				"test.html": parseTree,
+			}
+			analyzed := tmpl.DefinitionAnalysisWithinWorkspace(parsedFiles)
+
+			for _, file := range analyzed {
+				for _, err := range file.Errs {
+					errMsg := err.GetError()
+					for _, forbidden := range tc.forbiddenErrors {
+						if strings.Contains(errMsg, forbidden) {
+							t.Errorf(
+								"unexpected error %q in template: %s",
+								errMsg,
+								tc.template,
+							)
+						}
+					}
+				}
+			}
+		})
+	}
+}

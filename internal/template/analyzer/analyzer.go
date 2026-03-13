@@ -226,6 +226,15 @@ func getBuiltinFunctionDefinition() map[string]*FunctionDefinition {
 	builtinSignatures["continue"] = zeroArgVoid()
 	builtinSignatures["break"] = zeroArgVoid()
 
+	// nil is a valid identifier in Go templates, returning an untyped nil value
+	zeroArgNil := func() *types.Signature {
+		results := types.NewTuple(
+			types.NewVar(token.NoPos, nil, "", types.Typ[types.UntypedNil]),
+		)
+		return types.NewSignatureType(nil, nil, nil, nil, results, false)
+	}
+	builtinSignatures["nil"] = zeroArgNil()
+
 	builtinFunctionDefinition := make(map[string]*FunctionDefinition)
 
 	for name, sig := range builtinSignatures {
