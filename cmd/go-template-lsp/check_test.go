@@ -101,6 +101,17 @@ func TestRunCheck_ErrorsJSONOutput(t *testing.T) {
 	}
 }
 
+func TestRunCheck_WithNilRhs(t *testing.T) {
+	// Regression test: {{with index . "key"}} crashed with nil pointer
+	// dereference because uniqueVariableInExpression was dereferenced
+	// before its nil check in analyzer_statements.go.
+	dir := filepath.Join("testdata", "check", "with-nil-rhs")
+	code := runCheck([]string{dir}, false, nil)
+	if code == 2 {
+		t.Errorf("expected exit code 0 or 1 (no crash), got 2 (tool failure)")
+	}
+}
+
 func TestRunCheck_NonexistentDir(t *testing.T) {
 	// Capture stderr to avoid noise.
 	oldErr := os.Stderr

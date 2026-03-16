@@ -193,9 +193,9 @@ func definitionAnalysisGroupStatement(
 		// NOTE: This enable type resolution at end of scope for context variable '.'
 		rhs := inferences.uniqueVariableInExpression
 		//nolint:gosec // controlFlowType is [2]types.Type fixed-size array
-		if types.Identical(controlFlowType[0], typeAny.Type()) &&
-			types.Identical(rhs.candidateDef.typ, typeAny.Type()) &&
-			rhs != nil {
+		if rhs != nil &&
+			types.Identical(controlFlowType[0], typeAny.Type()) &&
+			types.Identical(rhs.candidateDef.typ, typeAny.Type()) {
 			exprTree := extractOrInsertTemporaryImplicitTypeFromVariable(
 				rhs.candidateDef,
 				rhs.candidateSymbol,
@@ -223,12 +223,9 @@ func definitionAnalysisGroupStatement(
 
 			// NOTE: this is useful to type check the any 'header' type with the 'inner scope' type
 			// the only goal is to manage the case rhs.candidate == typeAny
-		} else if types.Identical(
-			controlFlowType[0],
-			typeAny.Type(),
-		) &&
-			!types.Identical(rhs.candidateDef.typ, typeAny.Type()) &&
-			rhs != nil {
+		} else if rhs != nil &&
+			types.Identical(controlFlowType[0], typeAny.Type()) &&
+			!types.Identical(rhs.candidateDef.typ, typeAny.Type()) {
 			varDef := localVariables["."]
 			varSymbol := lexer.NewToken(
 				lexer.DollarVariable,
