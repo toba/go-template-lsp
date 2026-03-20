@@ -57,8 +57,7 @@ todo:
                 feature: 0
                 milestone: 1
                 task: 0
-companions:
-    zed: toba/gozer
+zed_extension: toba/gozer
 nope:
     rules:
         - name: git-no-verify
