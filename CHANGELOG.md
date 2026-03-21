@@ -1,5 +1,19 @@
 # Changelog
 
+## Week of Mar 15 – Mar 21, 2026
+
+### ✨ Features
+
+- Adopt shared `github.com/toba/lsp` module; replace local transport, logging, and path utilities
+
+### 🐛 Fixes
+
+- Fix `go-template-lsp check` nil pointer dereference on `{{with index . "key"}}`
+
+### 🗜️ Tweaks
+
+- Migrate to `toba/lsp` server harness; replace hand-rolled main loop with `server.Server.Run`
+
 ## Week of Feb 8 – Feb 14, 2026
 
 ### ✨ Features
